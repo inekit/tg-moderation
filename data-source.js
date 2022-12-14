@@ -2,15 +2,9 @@ const process = require("node:process");
 require("dotenv").config();
 const { SnakeNamingStrategy } = require("typeorm-naming-strategies");
 
-const User = require("./db/entity/User");
-const Admin = require("./db/entity/Admin");
-const Category = require("./db/entity/Category");
-const Item = require("./db/entity/Item");
-const WAppointment = require("./db/entity/WAppointment");
-const Static = require("./db/entity/Static");
-const Question = require("./db/entity/Question");
-const Answer = require("./db/entity/Answer");
-const Report = require("./db/entity/Report");
+const User = require("./src/db/entity/User");
+const Admin = require("./src/db/entity/Admin");
+const Appointment = require("./src/db/entity/Appointment");
 
 const { DataSource } = require("typeorm");
 
@@ -23,17 +17,7 @@ const AppDataSource = new DataSource({
   username: DB_USER,
   password: DB_PASSWORD,
   database: DB_DATABASE,
-  entities: [
-    User,
-    Admin,
-    Category,
-    Item,
-    WAppointment,
-    Static,
-    Question,
-    Answer,
-    Report,
-  ],
+  entities: [User, Admin, Appointment],
   synchronize: true,
   migrationsTableName: "custom_migration_table",
   migrations: ["./src/db/migrations/*.js"],
