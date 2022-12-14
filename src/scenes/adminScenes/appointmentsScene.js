@@ -8,6 +8,7 @@ const {
   createKeyboard,
   handlers: { FilesHandler },
 } = require("telegraf-steps");
+require("dotenv").config();
 
 const tOrmCon = require("../../db/connection");
 
@@ -223,7 +224,9 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
             comment ? `\n5) ${comment}` : " ",
           ]);
 
-    await ctx.telegram.sendMessage(customer_id, title).catch((e) => {});
+    await ctx.telegram
+      .sendMessage(process.env.CHANNEL_ID, title)
+      .catch((e) => {});
 
     await ctx.telegram
       .sendMessage(
