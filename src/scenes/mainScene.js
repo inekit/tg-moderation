@@ -46,11 +46,11 @@ scene
     variable: "name",
     confines: ["string45", "cyrillic"],
   })
-  .addStep({
+  /*.addStep({
     variable: "contacts",
     skipTo: "what_need",
     skipText: "Оставить мой ник",
-  })
+  })*/
   .addSelect({
     variable: "what_need",
     options: {
