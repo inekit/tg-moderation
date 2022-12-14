@@ -25,7 +25,7 @@ console.log("started");
   if (process.env.NODE_ENV === "production") {
     bot.catch(console.error);
 
-    const secretPath = `/estate/telegraf/${bot.secretPathComponent()}`;
+    const secretPath = `/delivery/telegraf/${bot.secretPathComponent()}`;
 
     console.log(secretPath);
 
