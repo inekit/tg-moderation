@@ -11,6 +11,7 @@ const mainStage = new Stage(
     require("./scenes/adminScenes/adminScene"),
     require("./scenes/adminScenes/adminsScene"),
     require("./scenes/adminScenes/appointmentsScene"),
+    require("./scenes/adminScenes/historyScene"),
   ],
   {
     default: "clientScene",

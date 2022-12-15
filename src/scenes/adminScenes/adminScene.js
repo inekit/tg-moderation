@@ -31,5 +31,8 @@ scene.hears(titles.getValues("BUTTON_ADMINS"), (ctx) =>
 scene.hears(titles.getValues("BUTTON_APPOINTMENTS"), (ctx) =>
   ctx.scene.enter("appointmentsScene", { main_menu_button, waiting: false })
 );
+scene.hears(titles.getValues("BUTTON_HISTORY"), (ctx) =>
+  ctx.scene.enter("historyScene", { main_menu_button })
+);
 
 module.exports = scene;

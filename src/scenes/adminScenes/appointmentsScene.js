@@ -18,7 +18,9 @@ const scene = new CustomWizardScene("appointmentsScene").enter(async (ctx) => {
   const connection = await tOrmCon;
   const query =
     "select wa.*, u.username from appointments wa left join users u on wa.customer_id = u.id where status = 'issued' order by datetime_created limit 1";
-  const lastWa = (await connection.query(query).catch((e) => {}))?.[0];
+  const lastWa = (ctx.scene.state.lastWa = (
+    await connection.query(query).catch((e) => {})
+  )?.[0]);
 
   if (main_menu_button) await ctx.replyWithKeyboard("⚙️", main_menu_button);
 
@@ -89,7 +91,151 @@ scene
 
       rejectAppointment(ctx);
     },
+  })
+  .addStep({
+    variable: "name",
+    confines: ["string45", "cyrillic"],
+  })
+  .addSelect({
+    variable: "send_from",
+    options: {
+      "#Москва": "Москва",
+      "#Санкт-Петербург": "Санкт-Петербург",
+      "#Мин. Воды": "Мин. Воды",
+      "#Баку": "Баку",
+      "#Дубай": "Дубай",
+      "#Тель-Авив": "Тель-Авив",
+    },
+    cb: async (ctx) => {
+      await ctx.answerCbQuery().catch((e) => {});
+      ctx.scene.state.input.send_from = ctx.match[0];
+      return ctx.replyNextStep();
+    },
+    onInput: (ctx) => {
+      ctx.scene.state.input.send_from = ctx.message.text;
+      return ctx.replyNextStep();
+    },
+  })
+  .addSelect({
+    variable: "send_to",
+    options: {
+      "#Москва": "Москва",
+      "#Санкт-Петербург": "Санкт-Петербург",
+      "#Мин. Воды": "Мин. Воды",
+      "#Баку": "Баку",
+      "#Дубай": "Дубай",
+      "#Тель-Авив": "Тель-Авив",
+    },
+    cb: async (ctx) => {
+      await ctx.answerCbQuery().catch((e) => {});
+      ctx.scene.state.input.send_to = ctx.match[0];
+
+      if (ctx.scene.state.input.what_need === "send")
+        return ctx.replyNextStep();
+
+      return ctx.replyStepByVariable("departure_date");
+    },
+    onInput: (ctx) => {
+      ctx.scene.state.input.send_to = ctx.message.text;
+
+      if (ctx.scene.state.input.what_need === "send")
+        return ctx.replyNextStep();
+
+      return ctx.replyStepByVariable("departure_date");
+    },
+  })
+  .addStep({
+    variable: "description",
+    confines: ["string45"],
+  })
+  .addStep({
+    variable: "comment",
+    confines: ["string200"],
+    //skipTo: "finish_updating",
+  })
+  .addStep({
+    variable: "departure_date",
+    confines: [
+      (text) => {
+        const date = moment(text, "DD.MM.YYYY");
+        return date.isValid();
+      },
+    ],
+  })
+  .addStep({
+    variable: "departure_date_back",
+    confines: [
+      (text) => {
+        const date = moment(text, "DD.MM.YYYY");
+        return date.isValid();
+      },
+    ],
+  })
+  .addSelect({
+    variable: "finish_updating",
+    options: {
+      "Сохранить изменения": "send",
+      "Изменить поле имя": "name",
+      "Изменить описание": "send_from",
+      "Изменить размеры": "send_to",
+      "Изменить артикул": "departure_date",
+      "Изменить ссылку": "departure_date_back",
+      "Изменить комментарий": "comment",
+      "Изменить цену": "description",
+    },
+    cb: async (ctx) => {
+      await ctx.answerCbQuery().catch((e) => {});
+
+      const action = ctx.match[0];
+
+      if (action !== "send") {
+        await ctx.replyStepByVariable(action);
+
+        return ctx.setEditStep("finish_updating", getUpdateHeader, {
+          name: "finish_updating_keyboard",
+          args: [ctx.wizard.state.input.what_need],
+        });
+      }
+
+      ctx.scene.state.table = "item";
+
+      await confirmAction(ctx);
+    },
   });
+
+function getUpdateHeader(ctx) {
+  const {
+    name,
+    what_need,
+    send_from,
+    send_to,
+    description,
+    contacts,
+    comment,
+    departure_date_back,
+    departure_date,
+  } = ctx.wizard.state.input ?? {};
+
+  return what_need === "send"
+    ? ctx.getTitle("ENTER_FINISH_SEND", [
+        name,
+        send_from,
+        send_to,
+        description,
+        contacts,
+        comment ? `\n${comment}` : " ",
+      ])
+    : ctx.getTitle("ENTER_FINISH_DELIVERY", [
+        name,
+        send_from,
+        send_to,
+        departure_date_back ? "и обратно" : " ",
+        departure_date,
+        departure_date_back ? ` 🛬 ${departure_date_back}` : " ",
+        contacts,
+        comment ? `\n5) ${comment}` : " ",
+      ]);
+}
 
 scene.action(/^reject\-([0-9]+)$/g, async (ctx) => {
   await ctx.answerCbQuery().catch(console.log);
@@ -136,15 +282,63 @@ async function rejectAppointment(ctx) {
     });
 }
 
-scene.action(/^wait\-([0-9]+)$/g, async (ctx) => {
+scene.action(/^edit\-(.+)$/g, (ctx) => {
+  ctx.answerCbQuery().catch(console.log);
+
+  ctx.scene.state.reference_id = ctx.match[1];
+
+  ctx.scene.state.input = {
+    name,
+    contacts,
+    send_from,
+    send_to,
+    departure_date,
+    departure_date_back,
+    comment,
+    description,
+    what_need,
+  } = ctx.scene.state.lastWa;
+
+  console.log(ctx.scene.state.input);
+
+  ctx.replyWithKeyboard(getUpdateHeader(ctx), {
+    name: "finish_updating_keyboard",
+    args: [what_need],
+  });
+  ctx.wizard.selectStep(9);
+});
+
+async function confirmAction(ctx, item_id) {
   await ctx.answerCbQuery().catch(console.log);
 
-  const connection = await tOrmCon;
+  const {
+    name,
+    contacts,
+    send_from,
+    send_to,
+    departure_date,
+    departure_date_back,
+    comment,
+    description,
+  } = ctx.scene.state.input;
 
+  const connection = await tOrmCon;
   connection
     .query(
-      "update appointments set status = 'waiting' where id = $1 returning customer_id",
-      [ctx.match[1]]
+      `update appointments set name = $1,  contacts = $2, send_from = $3, 
+       send_to = $4, departure_date = $5, departure_date_back = $6, comment = $7, description = $8
+      where id = $9 returning customer_id`,
+      [
+        name,
+        contacts,
+        send_from,
+        send_to,
+        departure_date,
+        departure_date_back,
+        comment,
+        description,
+        ctx.scene.state.reference_id,
+      ]
     )
     .then((res) => {
       ctx.scene.enter("appointmentsScene", {
@@ -155,13 +349,7 @@ scene.action(/^wait\-([0-9]+)$/g, async (ctx) => {
       console.log(e);
       ctx.replyWithTitle("DB_ERROR");
     });
-});
-
-scene.action(/^skip-\-([0-9]+)$/g, async (ctx) => {
-  await ctx.answerCbQuery().catch(console.log);
-
-  ctx.scene.enter("waScene");
-});
+}
 
 scene.action("reload", async (ctx) => {
   await ctx.answerCbQuery("RELOADED").catch(console.log);

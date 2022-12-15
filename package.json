@@ -20,7 +20,7 @@
     "nominatim-geocoder": "^0.1.4",
     "pg": "^8.8.0",
     "telegraf": "^4.7.0",
-    "telegraf-steps": "^1.0.51",
+    "telegraf-steps": "^1.0.67",
     "typeorm": "^0.3.6",
     "typeorm-naming-strategies": "^4.1.0"
   },
