@@ -6,9 +6,12 @@ const {
 const {
   CustomWizardScene,
   createKeyboard,
+  telegraf: { Markup },
   handlers: { FilesHandler },
 } = require("telegraf-steps");
 require("dotenv").config();
+const urlButton = Markup.button.url;
+const { inlineKeyboard } = Markup;
 
 const tOrmCon = require("../../db/connection");
 
@@ -412,9 +415,22 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
             comment ? `\n5) ${comment}` : " ",
           ]);
 
-    await ctx.telegram
-      .sendMessage(process.env.CHANNEL_ID, title)
-      .catch((e) => {});
+    await ctx.telegram //process.env.CHANNEL_ID
+      .sendMessage(
+        process.env.CHANNEL_ID,
+        title /*, {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              urlButton(
+                ctx.getTitle("SEND_DIALOG_REQUEST"),
+                `t.me/${ctx.botInfo.username}/?start=dialog-${ctx.match[1]}`
+              ),
+            ],
+          ],
+        },
+      }*/
+      );
 
     await ctx.telegram
       .sendMessage(

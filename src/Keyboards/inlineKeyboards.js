@@ -51,6 +51,29 @@ exports.dictionary_keyboard = (dictionary, tag) => {
   return k;
 };
 
+exports.start_dialog_keyboard = (ctx, appointment_id) =>
+  inlineKeyboard(
+    [
+      urlButton(
+        ctx.getTitle(
+          "SEND_DIALOG_REQUEST",
+          `t.me/${ctx.botInfo.username}/?start=dialog-${appointment_id}`
+        )
+      ),
+    ],
+    {
+      columns: 1,
+    }
+  );
+
+exports.new_appointment_keyboard = (ctx) =>
+  inlineKeyboard(
+    [callbackButton("Заполнить новую заявку", "new_appointment")],
+    {
+      columns: 1,
+    }
+  );
+
 exports.finish_send_keyboard = (ctx) =>
   inlineKeyboard(
     [

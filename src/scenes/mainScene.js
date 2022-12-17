@@ -5,9 +5,7 @@ const {
   handlers: { FilesHandler },
   telegraf: { Markup },
 } = require("telegraf-steps");
-const titles = require("telegraf-steps").titlesGetter(__dirname + "/../Titles");
 const moment = require("moment");
-const dateFormats = ["D.MMMM.YYYY", "DD.MM.YY", "DD.MM.YYYY", "DD.MM.YYYY"];
 const tOrmCon = require("../db/connection");
 const getUser = require("../Utils/getUser");
 
@@ -32,9 +30,14 @@ const scene = new CustomWizardScene("clientScene").enter(async (ctx) => {
       });
   }
 
+  /*const appointment_id = /dialog\-([0-9]+)/g.exec(ctx.startPayload)?.[1];
+
+    if (appointment_id)
+      return ctx.scene.enter("dialogScene", { appointment_id, mode: "client" });
+  */
   console.log(userObj);
 
-  await ctx.replyWithTitle("GREETING");
+  visual && (await ctx.replyWithTitle("GREETING"));
 
   if (userObj.user_id)
     ctx.replyWithKeyboard("ENTER_NAME", "main_menu_admin_keyboard");
@@ -371,7 +374,7 @@ async function sendToAdmin(ctx) {
       console.log(res);
       ctx.scene.state.sent = true;
 
-      ctx.replyWithTitle("APPOINTMENT_SENT");
+      ctx.replyWithKeyboard("APPOINTMENT_SENT", "new_appointment_keyboard");
 
       const admins = await connection.getRepository("Admin").find();
       for (admin of admins) {
@@ -404,5 +407,9 @@ async function sendToAdmin(ctx) {
       ctx.replyWithTitle("DB_ERROR");
     });
 }
+
+scene.action("new_appointment", (ctx) =>
+  ctx.scene.enter("clientScene", { visual: false })
+);
 
 module.exports = [scene];
