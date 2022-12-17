@@ -72,15 +72,23 @@ scene
       "#Баку": "Баку",
       "#Дубай": "Дубай",
       "#Тель-Авив": "Тель-Авив",
+      "Вписать свой вариант": "main",
     },
     cb: async (ctx) => {
       await ctx.answerCbQuery().catch((e) => {});
+      if (ctx.match[0] === "main") {
+        ctx.wizard.next();
+        return ctx.replyWithTitle("ENTER_FROM_INPUT");
+      }
       ctx.scene.state.input.send_from = ctx.match[0];
-      return ctx.replyNextStep();
+      return ctx.replyStepByVariable("send_to");
     },
-    onInput: (ctx) => {
+  })
+  .addStep({
+    variable: "send_from_input",
+    cb: (ctx) => {
       ctx.scene.state.input.send_from = ctx.message.text;
-      return ctx.replyNextStep();
+      ctx.replyNextStep();
     },
   })
   .addSelect({
@@ -92,17 +100,27 @@ scene
       "#Баку": "Баку",
       "#Дубай": "Дубай",
       "#Тель-Авив": "Тель-Авив",
+      "Вписать свой вариант": "main",
     },
     cb: async (ctx) => {
       await ctx.answerCbQuery().catch((e) => {});
+
+      if (ctx.match[0] === "main") {
+        ctx.wizard.next();
+        return ctx.replyWithTitle("ENTER_TO_INPUT");
+      }
+
       ctx.scene.state.input.send_to = ctx.match[0];
 
       if (ctx.scene.state.input.what_need === "send")
-        return ctx.replyNextStep();
+        return ctx.replyStepByVariable("description");
 
       return ctx.replyStepByVariable("departure_date");
     },
-    onInput: (ctx) => {
+  })
+  .addStep({
+    variable: "send_from_input",
+    cb: (ctx) => {
       ctx.scene.state.input.send_to = ctx.message.text;
 
       if (ctx.scene.state.input.what_need === "send")

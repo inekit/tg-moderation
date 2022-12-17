@@ -53,5 +53,8 @@
   "BUTTON_BACK": "<--",
   "NO_SUCH_ITEM": "Нет такой заявки",
   "BUTTON_GO_BACK": "<--",
-  "BUTTON_PREVIOUS": "Пред"
+  "BUTTON_PREVIOUS": "Пред",
+  "ENTER_FROM_INPUT": "Впишите нужный город",
+  "ENTER_TO_INPUT": "Впишите нужный город",
+  "ENTER_SEND_FROM_INPUT": "ENTER_SEND_FROM_INPUT"
 }
