@@ -408,8 +408,9 @@ async function sendToAdmin(ctx) {
     });
 }
 
-scene.action("new_appointment", (ctx) =>
-  ctx.scene.enter("clientScene", { visual: false })
-);
+scene.action("new_appointment", async (ctx) => {
+  await ctx.answerCbQuery().catch((e) => {});
+  ctx.scene.enter("clientScene", { visual: false });
+});
 
 module.exports = [scene];
