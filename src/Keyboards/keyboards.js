@@ -37,23 +37,34 @@ exports.main_menu_admin_keyboard = (ctx) => {
 };
 
 exports.main_keyboard = (ctx, isAdmin) => {
-  return Markup.removeKeyboard();
+  const buttons = [];
+
+  buttons.push(
+    [ctx.getTitle("NEW_APPOINTMENT_BUTTON")],
+    [ctx.getTitle("APPOINTMENTS_BUTTON")],
+    [ctx.getTitle("DIALOGS_BUTTON")]
+  );
+
+  if (isAdmin) buttons.push([ctx.getTitle("BUTTON_BACK_ADMIN")]);
+
+  return Markup.keyboard(buttons, { columns: 2 }).resize();
 };
 
 exports.admin_keyboard = (ctx) =>
   Markup.keyboard([
+    [ctx.getTitle("BUTTON_SEARCH_A"), ctx.getTitle("BUTTON_SEARCH_U")],
     [ctx.getTitle("BUTTON_APPOINTMENTS")],
     [ctx.getTitle("BUTTON_HISTORY")],
     [ctx.getTitle("BUTTON_ADMINS")],
     [ctx.getTitle("BUTTON_CLIENT_MENU")],
   ]).resize();
 
-exports.categories_list_keyboard_bottom = (ctx, data) => {
-  const categoryButtons = data?.map((name) => {
-    return [name];
+exports.dialogs_keyboard = (ctx, data) => {
+  const categoryButtons = data?.map(({ username, text, appointment_id }) => {
+    return [`@${username} (№${appointment_id}) - ${text ?? "Нет сообщений"}`];
   });
 
-  //categoryButtons?.push([totalStr]);
+  categoryButtons?.push([ctx.getTitle("BUTTON_BACK_USER")]);
 
   return Markup.keyboard(categoryButtons).resize();
 };
@@ -63,6 +74,12 @@ exports.main_menu_goback_tasks_keyboard = (ctx) =>
     [ctx.getTitle("BUTTON_GO_BACK_TASKS"), ctx.getTitle("BUTTON_BACK_USER")],
     { columns: 1 }
   ).resize();
+
+exports.dialog_keyboard = (ctx) =>
+  Markup.keyboard([ctx.getTitle("BUTTON_BACK")]).resize();
+
+exports.dialog_a_keyboard = (ctx) =>
+  Markup.keyboard([ctx.getTitle("BUTTON_BACK_BACK")]).resize();
 
 exports.main_menu_back_keyboard = (ctx) =>
   Markup.keyboard([ctx.getTitle("BUTTON_BACK_USER")]).resize();

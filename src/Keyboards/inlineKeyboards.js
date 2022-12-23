@@ -65,6 +65,109 @@ exports.start_dialog_keyboard = (ctx, appointment_id) =>
       columns: 1,
     }
   );
+exports.search_u_list_keyboard = (ctx, data, offset) => {
+  const keyboard = inlineKeyboard(
+    data.map(({ username, username2, id }) =>
+      callbackButton("@" + (username ?? username2 ?? id), "dialog1-" + id)
+    ),
+    { columns: 1 }
+  );
+
+  const b = [];
+
+  if (offset > 0)
+    b.push(
+      callbackButton(
+        ctx.getTitle("BUTTON_PREVIOUS"),
+        `get_appointment_${Number(offset) - 1}`
+      )
+    );
+
+  b.push(
+    callbackButton(
+      ctx.getTitle("BUTTON_NEXT"),
+      `get_appointment_${Number(offset) + 1}`
+    )
+  );
+
+  keyboard.reply_markup.inline_keyboard.push(b);
+
+  return keyboard;
+};
+
+exports.search_a_list_keyboard = (ctx, data, offset) => {
+  const keyboard = inlineKeyboard(
+    data.map(({ appointment_id, id }) =>
+      callbackButton("Заявка №" + appointment_id, "dialog1-" + id)
+    ),
+    { columns: 1 }
+  );
+
+  const b = [];
+
+  if (offset > 0)
+    b.push(
+      callbackButton(
+        ctx.getTitle("BUTTON_PREVIOUS"),
+        `get_appointment_${Number(offset) - 1}`
+      )
+    );
+
+  b.push(
+    callbackButton(
+      ctx.getTitle("BUTTON_NEXT"),
+      `get_appointment_${Number(offset) + 1}`
+    )
+  );
+
+  keyboard.reply_markup.inline_keyboard.push(b);
+
+  return keyboard;
+};
+
+exports.appointments_list_keyboard = (
+  ctx,
+  data,
+  prefix,
+  cardId,
+  offset,
+  noadd
+) => {
+  const keyboard = inlineKeyboard(
+    data.map(({ name, id }) =>
+      callbackButton("Заявка №" + id, prefix + "-" + id)
+    ),
+    { columns: 1 }
+  );
+
+  const p2 =
+    prefix === "item" ? "category" : prefix === "subcategory" ? "category" : "";
+
+  console.log(1, p2);
+
+  if (prefix === "item" && p2) {
+    const b = [];
+
+    if (offset > 0)
+      b.push(
+        callbackButton(
+          ctx.getTitle("BUTTON_PREVIOUS"),
+          `get_${cardId}_${Number(offset) - 1}`
+        )
+      );
+
+    b.push(
+      callbackButton(
+        ctx.getTitle("BUTTON_NEXT"),
+        `get_${cardId}_${Number(offset) + 1}`
+      )
+    );
+
+    keyboard.reply_markup.inline_keyboard.push(b);
+  }
+
+  return keyboard;
+};
 
 exports.new_appointment_keyboard = (ctx) =>
   inlineKeyboard(

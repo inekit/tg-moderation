@@ -416,9 +416,7 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
           ]);
 
     await ctx.telegram //process.env.CHANNEL_ID
-      .sendMessage(
-        process.env.CHANNEL_ID,
-        title /*, {
+      .sendMessage(ctx.from.id, title, {
         reply_markup: {
           inline_keyboard: [
             [
@@ -429,8 +427,7 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
             ],
           ],
         },
-      }*/
-      );
+      });
 
     await ctx.telegram
       .sendMessage(

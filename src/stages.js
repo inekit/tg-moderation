@@ -8,12 +8,16 @@ const titles = require("telegraf-steps").titlesGetter(__dirname + "/Titles");
 const mainStage = new Stage(
   [
     ...require("./scenes/mainScene"),
-    //require("./scenes/dialogScene"),
+    require("./scenes/dialogScene"),
+    require("./scenes/dialogSellerScene"),
+    require("./scenes/userAppointmentsScene"),
 
     require("./scenes/adminScenes/adminScene"),
     require("./scenes/adminScenes/adminsScene"),
     require("./scenes/adminScenes/appointmentsScene"),
     require("./scenes/adminScenes/historyScene"),
+    require("./scenes/adminScenes/searchDialogScene"),
+    require("./scenes/adminScenes/dialogAdminScene"),
   ],
   {
     default: "clientScene",
@@ -21,14 +25,18 @@ const mainStage = new Stage(
 );
 
 mainStage.start(async (ctx) => ctx.scene.enter("clientScene"));
-mainStage.command("web", (ctx) => ctx.scene.enter("catalogScene"));
-mainStage.command("tasks", (ctx) => ctx.scene.enter("tasksScene"));
-mainStage.command("refs", (ctx) => ctx.scene.enter("referalsScene"));
-mainStage.command("help", (ctx) => ctx.scene.enter("helpScene"));
-mainStage.command("lk", (ctx) => ctx.scene.enter("profileScene"));
-mainStage.command("report", (ctx) => ctx.scene.enter("myReportsScene"));
+mainStage.action(/^dialog\-([0-9]+)$/g, async (ctx) => {
+  await ctx.answerCbQuery().catch(console.log);
 
-mainStage.command("cashout", (ctx) => ctx.scene.enter("withdrawalScene"));
+  ctx.scene.enter("dialogSellerScene", { dialog_id: ctx.match[1] });
+});
+mainStage.action(/^dialog\-client\-([0-9]+)$/g, async (ctx) => {
+  await ctx.answerCbQuery().catch(console.log);
+  console.log(224);
+
+  ctx.scene.enter("dialogScene", { appointment_id: ctx.match[1] });
+});
+
 mainStage.hears(titles.getValues("BUTTON_BACK_USER"), (ctx) =>
   ctx.scene.enter("clientScene")
 );

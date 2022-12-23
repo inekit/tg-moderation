@@ -9,8 +9,9 @@ const tOrmCon = require("../db/connection");
 const getUser = require("../Utils/getUser");
 const sendToOpposite = require("../Utils/sendToOpposite");
 
-const scene = new CustomWizardScene("dialogScene").enter(async (ctx) => {
-  const { visual = true, appointment_id, mode, from_dialogs } = ctx.scene.state;
+const scene = new CustomWizardScene("dialogSellerScene").enter(async (ctx) => {
+  const { visual = true, dialog_id, from_dialogs } = ctx.scene.state;
+  let userObj = (ctx.scene.state.userObj = await getUser(ctx));
 
   const connection = await tOrmCon;
 
@@ -23,40 +24,22 @@ const scene = new CustomWizardScene("dialogScene").enter(async (ctx) => {
 
   const messages = await connection
     .query(
-      `select m.*, d.id dialog_id, username from messages m
-       right join dialogs d on m.dialog_id = d.id 
-       left join users u on m.from_id = u.id
-       where appointment_id = $1
-    and d.client_id = $2`,
-      [appointment_id, ctx.from.id]
+      `select m.*, d.id dialog_id, username from messages m 
+      right join dialogs d on m.dialog_id = d.id 
+      left join users u on m.from_id = u.id
+      where dialog_id = $1 order by m.id`,
+      [dialog_id]
     )
     .catch(console.log);
 
-  console.log(1111, messages);
-
-  let dialog_id = messages?.[0]?.dialog_id;
-
-  if (!dialog_id)
-    dialog_id = (
-      await connection
-        .query(
-          `insert into dialogs (client_id, appointment_id, opened_client) values($1, $2, true) returning id`,
-          [ctx.from.id, appointment_id]
-        )
-        .catch((e) => {})
-    )?.[0]?.id;
-  else
-    await connection
-      .query(`update dialogs set opened_client = true where id = $1`, [
-        dialog_id,
-      ])
-      .catch((e) => {});
-
-  ctx.scene.state.dialog_id = dialog_id;
+  await connection
+    .query(`update dialogs set opened_seller = true where id = $1`, [dialog_id])
+    .catch((e) => {});
 
   const {
-    seller_id,
-    seller_username,
+    client_id,
+    client_username,
+    appointment_id,
     what_need,
     name,
     contacts,
@@ -66,19 +49,24 @@ const scene = new CustomWizardScene("dialogScene").enter(async (ctx) => {
     departure_date_back,
     comment,
     description,
-  } = (
+  } = (ctx.scene.state.item = (
     await connection
       .query(
-        `select customer_id seller_id, username seller_username, a.*
-        from appointments a left join users u on a.customer_id = u.id where a.id = $1 limit 1`,
-        [appointment_id]
+        `select client_id, username client_username, a.* ,d.appointment_id
+        from dialogs d 
+        left join users u on d.client_id = u.id 
+        left join appointments a on d.appointment_id = a.id
+        where d.id = $1 limit 1`,
+        [dialog_id]
       )
       .catch((e) => {})
-  )?.[0];
+  )?.[0]);
 
-  ctx.scene.state.seller_id = seller_id;
-  ctx.scene.state.seller_username = seller_username;
+  ctx.scene.state.client_id = client_id;
+  ctx.scene.state.client_username = client_username;
+  ctx.scene.state.appointment_id = appointment_id;
   ctx.scene.state.messages = messages;
+  console.log("fwe", ctx.scene.state.appointment_id);
 
   const messagesStr = messages
     ?.map((message) => {
@@ -104,17 +92,31 @@ const scene = new CustomWizardScene("dialogScene").enter(async (ctx) => {
 
       return ctx.getTitle("DIALOG_MESSAGE", [
         author,
-        `${message.text} ${botCommand}`,
+        `${message.text ? message.text + " " : ""}${botCommand}`,
       ]);
     })
     ?.join("\n\n");
 
   let messages_ids = [];
 
-  messages[0]?.username &&
+  /*for (message of messages) {
     messages_ids.push(
-      (await ctx.telegram.sendMessage(ctx.chat.id, messagesStr))?.message_id
+      (
+        await ctx.replyWithTitle(
+          "DIALOG_MESSAGE",
+          [
+            message.username ? "@" + message.username : message.from_id,
+            message.text,
+          ],
+          { disable_notification: true }
+        )
+      )?.message_id
     );
+  }*/
+
+  messages_ids.push(
+    (await ctx.telegram.sendMessage(ctx.chat.id, messagesStr))?.message_id
+  );
 
   const title =
     what_need === "send"
@@ -142,8 +144,54 @@ const scene = new CustomWizardScene("dialogScene").enter(async (ctx) => {
   );
 
   ctx.scene.state.messages_ids = messages_ids;
+});
 
-  console.log(messages_ids, dialog_id, seller_id, seller_username);
+scene.hears(titles.getValues("BUTTON_BACK"), async (ctx) => {
+  const connection = await tOrmCon;
+
+  const { dialog_id, from_dialogs, messages_ids, client_id, appointment_id } =
+    ctx.scene.state;
+
+  for (id of messages_ids) {
+    ctx.telegram.deleteMessage(ctx.chat.id, id).catch((e) => {
+      //console.log(e);
+    });
+  }
+
+  const messages = await connection
+    .query(
+      `select m.*, d.id dialog_id, username from messages m 
+      right join dialogs d on m.dialog_id = d.id 
+      left join users u on m.from_id = u.id
+      where dialog_id = $1 order by m.id`,
+      [dialog_id]
+    )
+    .catch(console.log);
+
+  for (message of messages) {
+    if (message.id > messages_ids[0])
+      ctx.telegram.deleteMessage(ctx.chat.id, message.id).catch((e) => {
+        console.log(e);
+      });
+
+    message.second_id &&
+      ctx.telegram.deleteMessage(ctx.chat.id, message.second_id).catch((e) => {
+        console.log(e);
+      });
+  }
+
+  await connection
+    .query(`update dialogs set opened_seller = false where id = $1`, [
+      dialog_id,
+    ])
+    .catch((e) => {});
+
+  await ctx.telegram.sendMessage(
+    client_id,
+    `@${ctx.from.username} (№${appointment_id}) покинул диалог`
+  );
+
+  ctx.scene.enter("clientScene", { from_dialogs });
 });
 
 scene.hears(
@@ -175,60 +223,6 @@ scene.hears(
   }
 );
 
-scene.hears(titles.getValues("BUTTON_BACK"), async (ctx) => {
-  const connection = await tOrmCon;
-
-  const {
-    dialog_id,
-    from_dialogs,
-    messages_ids,
-    seller_id,
-    seller_username,
-    appointment_id,
-  } = ctx.scene.state;
-
-  for (id of messages_ids) {
-    ctx.telegram.deleteMessage(ctx.chat.id, id).catch((e) => {
-      //console.log(e);
-    });
-  }
-
-  const messages = await connection
-    .query(
-      `select m.*, d.id dialog_id, username from messages m 
-      right join dialogs d on m.dialog_id = d.id 
-      left join users u on m.from_id = u.id
-      where dialog_id = $1 order by m.id`,
-      [dialog_id]
-    )
-    .catch(console.log);
-
-  for (message of messages) {
-    if (message.id > messages_ids[0])
-      ctx.telegram.deleteMessage(ctx.chat.id, message.id).catch((e) => {
-        console.log(e);
-      });
-
-    message.second_id &&
-      ctx.telegram.deleteMessage(ctx.chat.id, message.second_id).catch((e) => {
-        console.log(e);
-      });
-  }
-
-  await connection
-    .query(`update dialogs set opened_client = false where id = $1`, [
-      dialog_id,
-    ])
-    .catch((e) => {});
-
-  await ctx.telegram.sendMessage(
-    seller_id,
-    `@${ctx.from.username} (№${appointment_id}) покинул диалог`
-  );
-
-  ctx.scene.enter("clientScene", { from_dialogs });
-});
-
 scene.on(
   ["document", "photo", "video", "voice", "video_note", "file", "text"],
   async (ctx) => {
@@ -238,22 +232,21 @@ scene.on(
     const text = ctx.message.text ?? ctx.message.caption;
     const photo = ctx.message.photo?.[1].file_id;
     const file = ctx.message.document?.file_id;
+
     const video = ctx.message.video?.file_id;
     const voice = ctx.message.voice?.file_id;
     const video_note = ctx.message.video_note?.file_id;
 
-    console.log(text, photo, video, voice, video_note);
-
-    const { dialog_id, seller_id, seller_username, appointment_id } =
+    const { dialog_id, client_id, seller_username, appointment_id } =
       ctx.scene.state;
 
     const connection = await tOrmCon;
 
-    const { opened_admin_id, opened_seller } =
+    const { opened_client, opened_admin_id } =
       (
         await connection
           .query(
-            "select opened_seller, opened_admin_id from dialogs where id = $1",
+            "select opened_client, opened_admin_id from dialogs where id = $1",
             [dialog_id]
           )
           .catch((e) => {
@@ -262,7 +255,7 @@ scene.on(
           })
       )?.[0] ?? {};
 
-    const message = await sendToOpposite(ctx, seller_id, opened_seller, {
+    const message = await sendToOpposite(ctx, client_id, opened_client, {
       text,
       photo,
       video,
@@ -270,6 +263,8 @@ scene.on(
       file,
       video_note,
       dialog_id,
+      appointment_id,
+      toClient: true,
     });
 
     const second =
@@ -283,8 +278,6 @@ scene.on(
         video_note,
         dialog_id,
       }));
-
-    console.log(opened_admin_id, second);
 
     await connection
       .query(
@@ -302,7 +295,9 @@ scene.on(
           video_note,
         ]
       )
-      .then(async (res) => {})
+      .then(async (res) => {
+        console.log(123, appointment_id);
+      })
       .catch((e) => {
         console.log(e);
         ctx.replyWithTitle("DB_ERROR");

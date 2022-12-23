@@ -8,9 +8,11 @@ const {
 const moment = require("moment");
 const tOrmCon = require("../db/connection");
 const getUser = require("../Utils/getUser");
+const { use } = require("../stages");
+const { Composer } = require("telegraf");
 
 const scene = new CustomWizardScene("clientScene").enter(async (ctx) => {
-  const { visual = true } = ctx.scene.state;
+  const { visual = true, from_dialogs } = ctx.scene.state;
   let userObj = (ctx.scene.state.userObj = await getUser(ctx));
 
   const connection = await tOrmCon;
@@ -30,21 +32,102 @@ const scene = new CustomWizardScene("clientScene").enter(async (ctx) => {
       });
   }
 
-  /*const appointment_id = /dialog\-([0-9]+)/g.exec(ctx.startPayload)?.[1];
+  await connection
+    .query(`update dialogs set opened_client = false where client_id = $1`, [
+      ctx.from.id,
+    ])
+    .catch((e) => {});
 
-    if (appointment_id)
-      return ctx.scene.enter("dialogScene", { appointment_id, mode: "client" });
-  */
+  await connection
+    .query(
+      `update dialogs set opened_seller = false where $1 = (select customer_id from dialogs d left join appointments a on d.appointment_id = a.id where d.id = dialogs.id)`,
+      [ctx.from.id]
+    )
+    .catch((e) => {});
+
+  const appointment_id = /dialog\-([0-9]+)/g.exec(ctx.startPayload)?.[1];
+
+  if (appointment_id)
+    return ctx.scene.enter("dialogScene", { appointment_id, mode: "client" });
+
+  if (from_dialogs) return getDialogs(ctx);
+
   console.log(userObj);
 
   visual && (await ctx.replyWithTitle("GREETING"));
 
-  if (userObj.user_id)
+  /*if (userObj.user_id)
     ctx.replyWithKeyboard("ENTER_NAME", "main_menu_admin_keyboard");
-  else ctx.replyWithKeyboard("ENTER_NAME", "main_keyboard");
+  else ctx.replyWithKeyboard("ENTER_NAME", "main_keyboard");*/
+
+  ctx.replyWithKeyboard("MAIN_MENU_TITLE", {
+    name: "main_keyboard",
+    args: [userObj?.user_id],
+  });
 });
 
+scene.hears(titles.getValues("NEW_APPOINTMENT_BUTTON"), async (ctx) => {
+  ctx.replyNextStep();
+});
+scene.hears(titles.getValues("APPOINTMENTS_BUTTON"), async (ctx) => {
+  ctx.scene.enter("userAppointmentsScene");
+});
+scene.hears(titles.getValues("DIALOGS_BUTTON"), async (ctx) => getDialogs(ctx));
+
+async function getDialogs(ctx) {
+  ctx.wizard?.selectStep(0);
+  const connection = await tOrmCon;
+
+  const dialogs = (ctx.scene.state.dialogs = await connection
+    .query(
+      `select case when customer_id = $1 then u2.username when client_id = $1 then  u.username end username, 
+      (select m.text from messages m where m.from_id <>$1 and m.dialog_id = d.id order by m.id desc limit 1),
+      case when customer_id = $1 then 'seller' when client_id = $1 then 'client' end role,
+      d.id,
+      d.appointment_id
+      from dialogs d 
+      left join appointments a on d.appointment_id = a.id
+      left join users u on a.customer_id = u.id
+      left join users u2 on d.client_id = u2.id
+      where client_id = $1 or customer_id = $1`,
+      [ctx.from.id]
+    )
+    .catch(console.log));
+
+  ctx.replyWithKeyboard("CHOOSE_DIALOG", {
+    name: "dialogs_keyboard",
+    args: [dialogs],
+  });
+}
+
 scene
+  .addStep({
+    variable: "none",
+    handler: new Composer().on("text", (ctx) => {
+      const text = ctx.message.text;
+      const fUsername = /^\@(.+)\s\(/g.exec(text)?.[1];
+      if (fUsername) {
+        const dialog = ctx.scene.state.dialogs?.find(
+          ({ username }) => username === fUsername
+        );
+
+        console.log(dialog);
+
+        if (!dialog) return;
+
+        if (dialog.role === "seller")
+          return ctx.scene.enter("dialogSellerScene", {
+            dialog_id: dialog.id,
+            from_dialogs: true,
+          });
+
+        return ctx.scene.enter("dialogScene", {
+          appointment_id: dialog.appointment_id,
+          from_dialogs: true,
+        });
+      }
+    }),
+  })
   .addStep({
     variable: "name",
     confines: ["string45", "cyrillic"],
@@ -69,12 +152,12 @@ scene
   .addSelect({
     variable: "send_from",
     options: {
-      "#Москва": "Москва",
-      "#Санкт-Петербург": "Санкт-Петербург",
-      "#Мин. Воды": "Мин. Воды",
-      "#Баку": "Баку",
+      "#Доха": "Доха",
       "#Дубай": "Дубай",
-      "#Тель-Авив": "Тель-Авив",
+      "#Москва": "Москва",
+      "#Стамбул": "Стамбул",
+      "#Франкфурт": "Франкфурт",
+      "#Тель-Авив": "ТельАвив",
       "Вписать свой вариант": "main",
     },
     cb: async (ctx) => {
@@ -97,12 +180,12 @@ scene
   .addSelect({
     variable: "send_to",
     options: {
-      "#Москва": "Москва",
-      "#Санкт-Петербург": "Санкт-Петербург",
-      "#Мин. Воды": "Мин. Воды",
-      "#Баку": "Баку",
+      "#Доха": "Доха",
       "#Дубай": "Дубай",
-      "#Тель-Авив": "Тель-Авив",
+      "#Москва": "Москва",
+      "#Стамбул": "Стамбул",
+      "#Франкфурт": "Франкфурт",
+      "#Тель-Авив": "ТельАвив",
       "Вписать свой вариант": "main",
     },
     cb: async (ctx) => {
@@ -410,7 +493,8 @@ async function sendToAdmin(ctx) {
 
 scene.action("new_appointment", async (ctx) => {
   await ctx.answerCbQuery().catch((e) => {});
-  ctx.scene.enter("clientScene", { visual: false });
+  //ctx.scene.enter("clientScene", { visual: false });
+  ctx.replyStepByVariable("name");
 });
 
 module.exports = [scene];

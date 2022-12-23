@@ -17,10 +17,32 @@ module.exports = new EntitySchema({
       type: "int",
       nullable: false,
     },
+    opened_seller: {
+      type: "boolean",
+      nullable: false,
+      default: false,
+    },
+    opened_client: {
+      type: "boolean",
+      nullable: false,
+      default: false,
+    },
+    opened_admin_id: {
+      type: "bigint",
+      nullable: true,
+    },
   },
   relations: {
     client: {
       target: "User",
+      type: "one-to-many",
+      cascade: true,
+      joinColumn: true,
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    },
+    opened_admin: {
+      target: "Admin",
       type: "one-to-many",
       cascade: true,
       joinColumn: true,

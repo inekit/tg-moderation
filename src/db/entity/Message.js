@@ -1,13 +1,17 @@
 var EntitySchema = require("typeorm").EntitySchema;
 
 module.exports = new EntitySchema({
-  name: "Admin",
-  tableName: "admins",
+  name: "Message",
+  tableName: "messages",
   columns: {
     id: {
-      type: "int",
+      type: "bigint",
       primary: true,
       generated: true,
+    },
+    second_id: {
+      type: "bigint",
+      nullable: true,
     },
     dialog_id: {
       type: "int",
@@ -17,6 +21,11 @@ module.exports = new EntitySchema({
       type: "bigint",
       nullable: false,
     },
+    from_admin: {
+      type: "boolean",
+      nullable: false,
+      default: false,
+    },
     text: {
       type: "varchar",
       length: 10000,
@@ -24,27 +33,32 @@ module.exports = new EntitySchema({
     },
     photo: {
       type: "varchar",
-      length: 10000,
+      length: 255,
       nullable: true,
     },
     video: {
       type: "varchar",
-      length: 10000,
+      length: 255,
       nullable: true,
     },
     voice: {
       type: "varchar",
-      length: 10000,
+      length: 255,
+      nullable: true,
+    },
+    file: {
+      type: "varchar",
+      length: 255,
       nullable: true,
     },
     video_note: {
       type: "varchar",
-      length: 10000,
+      length: 255,
       nullable: true,
     },
   },
   relations: {
-    user: {
+    from: {
       target: "User",
       type: "one-to-many",
       cascade: true,
