@@ -24,8 +24,6 @@ const scene = new CustomWizardScene("searchDialogScene")
   .enter(async (ctx) => {
     const { edit, offset = 0, mode, text } = ctx.scene.state;
 
-    console.log(1432543);
-
     if (text) return searchByKey(ctx, text, mode);
 
     const title = mode === "username" ? "ENTER_USERNAME" : "ENTER_A_ID";
@@ -43,7 +41,7 @@ const scene = new CustomWizardScene("searchDialogScene")
   });
 
 async function searchByKey(ctx, text, mode) {
-  const test = mode === "username" ? /^@(.+)$/g : /^([0-9]+)$/g;
+  const test = mode === "username" ? /^(.+)$/g : /^([0-9]+)$/g;
 
   const key = test.exec(text)?.[1];
 
@@ -54,16 +52,20 @@ async function searchByKey(ctx, text, mode) {
   const connection = await tOrmCon;
 
   if (mode === "username") {
-    const dialogs = await connection
+    let dialogs = (ctx.scene.state.dialogs = await connection
       .query(
         `select d.id, d.appointment_id from dialogs d 
         left join appointments a on d.appointment_id = a.id 
         left join users u on client_id = u.id
         left join users u2 on customer_id = u2.id
-        where u.username = $1 or u2.username = $1`,
+        where lower(u.username) = lower($1) or lower(u2.username) = lower($1)`,
         [key]
       )
-      .catch((e) => {});
+      .catch((e) => {}));
+
+    dialogs = dialogs.slice(0, 10);
+
+    ctx.scene.state.offset = 0;
 
     if (!dialogs?.length) return ctx.replyWithTitle("NO_DIALOGS_USER");
 
@@ -71,10 +73,10 @@ async function searchByKey(ctx, text, mode) {
 
     ctx.replyWithKeyboard("CHOOSE_APPOINTMENT_SEARCH", {
       name: "search_a_list_keyboard",
-      args: [dialogs, 0],
+      args: [dialogs, ctx.scene.state.offset],
     });
   } else {
-    const dialogs = await connection
+    let dialogs = (ctx.scene.state.dialogs = await connection
       .query(
         `select d.id, u.username, u2.username username2 from dialogs d 
         left join appointments a on d.appointment_id = a.id 
@@ -83,14 +85,18 @@ async function searchByKey(ctx, text, mode) {
         where appointment_id = $1`,
         [key]
       )
-      .catch((e) => {});
+      .catch((e) => {}));
     console.log(dialogs);
+
+    dialogs = dialogs.slice(0, 10);
+
+    ctx.scene.state.offset = 0;
 
     if (!dialogs?.length) return ctx.replyWithTitle("NO_DIALOGS_APPOINTMENT");
 
     ctx.replyWithKeyboard("CHOOSE_USERS_SEARCH", {
       name: "search_u_list_keyboard",
-      args: [dialogs, 0],
+      args: [dialogs, ctx.scene.state.offset],
     });
   }
 }
@@ -99,21 +105,24 @@ scene.action(/get\_(.+)\_(.+)/g, async (ctx) => {
   await ctx.answerCbQuery().catch(console.log);
 
   const offset = ctx.match[2];
-  const category_id = ctx.match[1];
+  const type = ctx.match[1];
 
-  console.log("get", offset, category_id);
-
-  const category_name = category_id;
+  let dialogs = ctx.scene.state.dialogs.slice(offset * 10, offset * 10 + 10);
 
   if (offset < 0) return;
 
-  ctx.scene.enter("historyScene", {
-    edit: true,
-    category_id,
-    category_name,
-    categories: ctx.scene.state.categories,
-    offset,
-  });
+  ctx.scene.state.offset = offset;
+
+  if (type === "a")
+    ctx.replyWithKeyboard("CHOOSE_APPOINTMENT_SEARCH", {
+      name: "search_a_list_keyboard",
+      args: [dialogs, ctx.scene.state.offset],
+    });
+  else
+    ctx.editMenu("CHOOSE_USERS_SEARCH", {
+      name: "search_u_list_keyboard",
+      args: [dialogs, ctx.scene.state.offset],
+    });
 });
 
 scene.action(/^dialog1\-([0-9]+)$/g, async (ctx) => {

@@ -99,7 +99,8 @@ const scene = new CustomWizardScene("dialogAdminScene").enter(async (ctx) => {
 
   const title =
     what_need === "send"
-      ? ctx.getTitle("ENTER_FINISH_SEND", [
+      ? ctx.getTitle("ENTER_FINISH_SEND_ADMIN", [
+          appointment_id,
           name,
           send_from,
           send_to,
@@ -107,7 +108,8 @@ const scene = new CustomWizardScene("dialogAdminScene").enter(async (ctx) => {
           contacts,
           comment ? `\n${comment}` : " ",
         ])
-      : ctx.getTitle("ENTER_FINISH_DELIVERY", [
+      : ctx.getTitle("ENTER_FINISH_DELIVERY_ADMIN", [
+          appointment_id,
           name,
           send_from,
           send_to,

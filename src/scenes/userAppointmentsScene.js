@@ -79,6 +79,7 @@ scene.action(/^item\-([0-9]+)$/g, async (ctx) => {
   await ctx.replyWithPhoto(item.photo).catch((e) => {});
 
   const {
+    id,
     what_need,
     name,
     contacts,
@@ -93,7 +94,8 @@ scene.action(/^item\-([0-9]+)$/g, async (ctx) => {
 
   const title =
     what_need === "send"
-      ? ctx.getTitle("ENTER_FINISH_SEND", [
+      ? ctx.getTitle("ENTER_FINISH_SEND_ADMIN", [
+          id,
           name,
           send_from,
           send_to,
@@ -101,7 +103,8 @@ scene.action(/^item\-([0-9]+)$/g, async (ctx) => {
           contacts,
           comment ? `\n${comment}` : " ",
         ])
-      : ctx.getTitle("ENTER_FINISH_DELIVERY", [
+      : ctx.getTitle("ENTER_FINISH_DELIVERY_ADMIN", [
+          id,
           name,
           send_from,
           send_to,

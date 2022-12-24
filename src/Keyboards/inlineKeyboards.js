@@ -79,15 +79,12 @@ exports.search_u_list_keyboard = (ctx, data, offset) => {
     b.push(
       callbackButton(
         ctx.getTitle("BUTTON_PREVIOUS"),
-        `get_appointment_${Number(offset) - 1}`
+        `get_u_${Number(offset) - 1}`
       )
     );
 
   b.push(
-    callbackButton(
-      ctx.getTitle("BUTTON_NEXT"),
-      `get_appointment_${Number(offset) + 1}`
-    )
+    callbackButton(ctx.getTitle("BUTTON_NEXT"), `get_u_${Number(offset) + 1}`)
   );
 
   keyboard.reply_markup.inline_keyboard.push(b);
@@ -109,15 +106,12 @@ exports.search_a_list_keyboard = (ctx, data, offset) => {
     b.push(
       callbackButton(
         ctx.getTitle("BUTTON_PREVIOUS"),
-        `get_appointment_${Number(offset) - 1}`
+        `get_a_${Number(offset) - 1}`
       )
     );
 
   b.push(
-    callbackButton(
-      ctx.getTitle("BUTTON_NEXT"),
-      `get_appointment_${Number(offset) + 1}`
-    )
+    callbackButton(ctx.getTitle("BUTTON_NEXT"), `get_a_${Number(offset) + 1}`)
   );
 
   keyboard.reply_markup.inline_keyboard.push(b);
@@ -134,8 +128,11 @@ exports.appointments_list_keyboard = (
   noadd
 ) => {
   const keyboard = inlineKeyboard(
-    data.map(({ name, id }) =>
-      callbackButton("Заявка №" + id, prefix + "-" + id)
+    data.map(({ name, send_from, send_to, id }) =>
+      callbackButton(
+        `Заявка №${id}: ${send_from} - ${send_to}`,
+        prefix + "-" + id
+      )
     ),
     { columns: 1 }
   );
@@ -251,8 +248,9 @@ exports.categories_list_admin_keyboard = (
   const keyboard = inlineKeyboard(
     data.map(({ username, id, customer_id, what_need, name }) =>
       callbackButton(
-        (name ?? username ?? customer_id) +
-          (what_need === "send" ? "📦" : "🧳"),
+        `Заявка №${id + (what_need === "send" ? " 📦" : " 🧳")} от ${
+          name ?? username ?? customer_id
+        }`,
         prefix + "-" + id
       )
     ),

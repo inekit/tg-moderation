@@ -12,6 +12,7 @@ const {
 require("dotenv").config();
 const urlButton = Markup.button.url;
 const { inlineKeyboard } = Markup;
+const moment = require("moment");
 
 const tOrmCon = require("../../db/connection");
 
@@ -38,6 +39,7 @@ const scene = new CustomWizardScene("appointmentsScene").enter(async (ctx) => {
   const keyboard = { name: "wa_keyboard", args: [lastWa.id] };
 
   const {
+    id,
     what_need,
     name,
     contacts,
@@ -52,7 +54,8 @@ const scene = new CustomWizardScene("appointmentsScene").enter(async (ctx) => {
 
   const title =
     what_need === "send"
-      ? ctx.getTitle("ENTER_FINISH_SEND", [
+      ? ctx.getTitle("ENTER_FINISH_SEND_ADMIN", [
+          id,
           name,
           send_from,
           send_to,
@@ -60,7 +63,8 @@ const scene = new CustomWizardScene("appointmentsScene").enter(async (ctx) => {
           contacts,
           comment ? `\n${comment}` : " ",
         ])
-      : ctx.getTitle("ENTER_FINISH_DELIVERY", [
+      : ctx.getTitle("ENTER_FINISH_DELIVERY_ADMIN", [
+          id,
           name,
           send_from,
           send_to,
@@ -167,12 +171,21 @@ scene
   })
   .addStep({
     variable: "departure_date_back",
-    confines: [
-      (text) => {
-        const date = moment(text, "DD.MM.YYYY");
-        return date.isValid();
-      },
-    ],
+    cb: (ctx) => {
+      const text = ctx.message.text;
+      const date = moment(text, "DD.MM.YYYY");
+      console.log(
+        date,
+        moment(ctx.scene.state.input.departure_date, "DD.MM.YYYY")
+      );
+      if (
+        date.isValid() &&
+        date >= moment(ctx.scene.state.input.departure_date, "DD.MM.YYYY")
+      ) {
+        ctx.scene.state.input.departure_date_back = text;
+        ctx.replyNextStep();
+      } else ctx.replyWithTitle("ENTER_DEPARTURE_DATE_BACK");
+    },
   })
   .addSelect({
     variable: "finish_updating",
@@ -208,6 +221,7 @@ scene
 
 function getUpdateHeader(ctx) {
   const {
+    id,
     name,
     what_need,
     send_from,
@@ -220,7 +234,8 @@ function getUpdateHeader(ctx) {
   } = ctx.wizard.state.input ?? {};
 
   return what_need === "send"
-    ? ctx.getTitle("ENTER_FINISH_SEND", [
+    ? ctx.getTitle("ENTER_FINISH_SEND_ADMIN", [
+        id,
         name,
         send_from,
         send_to,
@@ -228,7 +243,8 @@ function getUpdateHeader(ctx) {
         contacts,
         comment ? `\n${comment}` : " ",
       ])
-    : ctx.getTitle("ENTER_FINISH_DELIVERY", [
+    : ctx.getTitle("ENTER_FINISH_DELIVERY_ADMIN", [
+        id,
         name,
         send_from,
         send_to,
@@ -382,6 +398,7 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
     const { customer_id } = (ctx.scene.state.appointment_data = res[0]?.[0]);
 
     const {
+      id,
       what_need,
       name,
       contacts,
@@ -396,27 +413,27 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
 
     const title =
       what_need === "send"
-        ? ctx.getTitle("ENTER_FINISH_SEND", [
+        ? ctx.getTitle("ENTER_FINISH_SEND_PUBLIC", [
+            id,
             name,
             send_from,
             send_to,
             description,
-            contacts,
             comment ? `\n${comment}` : " ",
           ])
-        : ctx.getTitle("ENTER_FINISH_DELIVERY", [
+        : ctx.getTitle("ENTER_FINISH_DELIVERY_PUBLIC", [
+            id,
             name,
             send_from,
             send_to,
             departure_date_back ? "и обратно" : " ",
             departure_date,
             departure_date_back ? ` 🛬 ${departure_date_back}` : " ",
-            contacts,
-            comment ? `\n5) ${comment}` : " ",
+            comment ? `\n4) ${comment}` : " ",
           ]);
 
-    await ctx.telegram //process.env.CHANNEL_ID
-      .sendMessage(ctx.from.id, title, {
+    await ctx.telegram //
+      .sendMessage(process.env.CHANNEL_ID, title, {
         reply_markup: {
           inline_keyboard: [
             [

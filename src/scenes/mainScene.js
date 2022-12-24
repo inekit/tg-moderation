@@ -275,12 +275,14 @@ scene
   })
   .addStep({
     variable: "departure_date",
-    confines: [
-      (text) => {
-        const date = moment(text, "DD.MM.YYYY");
-        return date.isValid();
-      },
-    ],
+    cb: (ctx) => {
+      const text = ctx.message.text;
+      const date = moment(text, "DD.MM.YYYY");
+      if (date.isValid() && date >= moment(new Date())) {
+        ctx.scene.state.input.departure_date = text;
+        ctx.replyNextStep();
+      } else ctx.replyWithTitle("ENTER_DEPARTURE_DATE");
+    },
   })
   .addSelect({
     variable: "want_back",
@@ -299,12 +301,21 @@ scene
   })
   .addStep({
     variable: "departure_date_back",
-    confines: [
-      (text) => {
-        const date = moment(text, "DD.MM.YYYY");
-        return date.isValid();
-      },
-    ],
+    cb: (ctx) => {
+      const text = ctx.message.text;
+      const date = moment(text, "DD.MM.YYYY");
+      console.log(
+        date,
+        moment(ctx.scene.state.input.departure_date, "DD.MM.YYYY")
+      );
+      if (
+        date.isValid() &&
+        date >= moment(ctx.scene.state.input.departure_date, "DD.MM.YYYY")
+      ) {
+        ctx.scene.state.input.departure_date_back = text;
+        ctx.replyNextStep();
+      } else ctx.replyWithTitle("ENTER_DEPARTURE_DATE_BACK");
+    },
   })
   .addStep({
     variable: "files",

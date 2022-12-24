@@ -199,6 +199,7 @@ async function getItem(ctx, item_id) {
   const keyboard = "go_back_keyboard";
 
   const {
+    id,
     what_need,
     name,
     send_from,
@@ -214,7 +215,8 @@ async function getItem(ctx, item_id) {
 
   const title =
     what_need === "send"
-      ? ctx.getTitle("ENTER_FINISH_SEND", [
+      ? ctx.getTitle("ENTER_FINISH_SEND_ADMIN", [
+          id,
           name,
           send_from,
           send_to,
@@ -222,7 +224,8 @@ async function getItem(ctx, item_id) {
           contacts,
           comment ? `\n${comment}` : " ",
         ])
-      : ctx.getTitle("ENTER_FINISH_DELIVERY", [
+      : ctx.getTitle("ENTER_FINISH_DELIVERY_ADMIN", [
+          id,
           name,
           send_from,
           send_to,
