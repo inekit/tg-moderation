@@ -68,7 +68,7 @@ exports.start_dialog_keyboard = (ctx, appointment_id) =>
 exports.search_u_list_keyboard = (ctx, data, offset) => {
   const keyboard = inlineKeyboard(
     data.map(({ username, username2, id }) =>
-      callbackButton("@" + (username ?? username2 ?? id), "dialog1-" + id)
+      callbackButton(`@${username2} - @${username}`, "dialog1-" + id)
     ),
     { columns: 1 }
   );

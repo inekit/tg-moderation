@@ -67,7 +67,7 @@ const scene = new CustomWizardScene("clientScene").enter(async (ctx) => {
 });
 
 scene.hears(titles.getValues("NEW_APPOINTMENT_BUTTON"), async (ctx) => {
-  ctx.replyNextStep();
+  ctx.replyStepByVariable("name");
 });
 scene.hears(titles.getValues("APPOINTMENTS_BUTTON"), async (ctx) => {
   ctx.scene.enter("userAppointmentsScene");
@@ -278,10 +278,11 @@ scene
     cb: (ctx) => {
       const text = ctx.message.text;
       const date = moment(text, "DD.MM.YYYY");
-      if (date.isValid() && date >= moment(new Date())) {
+      if (date.isValid() && date.add(1, "days") >= moment(new Date())) {
         ctx.scene.state.input.departure_date = text;
         ctx.replyNextStep();
-      } else ctx.replyWithTitle("ENTER_DEPARTURE_DATE");
+      } else if (date.isValid()) ctx.replyWithTitle("PAST_DATE");
+      else ctx.replyWithTitle("ENTER_DEPARTURE_DATE");
     },
   })
   .addSelect({
@@ -314,7 +315,8 @@ scene
       ) {
         ctx.scene.state.input.departure_date_back = text;
         ctx.replyNextStep();
-      } else ctx.replyWithTitle("ENTER_DEPARTURE_DATE_BACK");
+      } else if (date.isValid()) ctx.replyWithTitle("PAST_DATE_BACK");
+      else ctx.replyWithTitle("ENTER_DEPARTURE_DATE_BACK");
     },
   })
   .addStep({
