@@ -51,7 +51,7 @@ module.exports = (ctx) => {
   });
 
   const host = "127.0.0.1";
-  const port = process.env.PORT ?? 3000;
+  const port = process.env.SERVER_PORT ?? 3000;
   let server = app.listen(port, host, () =>
     console.log(`Server listens http://${host}:${port}`)
   );
@@ -76,7 +76,7 @@ module.exports = (ctx) => {
     console.log("a user connected");
   });
 
-  io.listen(4000, () => {
+  io.listen(process.env.IO_PORT ?? 4000, () => {
     console.log("listening on *:3000");
   });
 
