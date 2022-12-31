@@ -3,7 +3,7 @@ require("dotenv").config();
 const fs = require("fs");
 const allowed_updates = ["message", "callback_query", "chat_member"];
 const TOKEN = process.env.BOT_TOKEN;
-
+const server = require("./server/app");
 const keyboards = {
   ...require("./Keyboards/keyboards"),
   ...require("./Keyboards/inlineKeyboards"),
@@ -21,6 +21,8 @@ console.log("started");
 
 (async () => {
   bot.use(telegraf.session(), require("./stages"));
+
+  server(ctx);
 
   if (process.env.NODE_ENV === "production") {
     bot.catch(console.error);

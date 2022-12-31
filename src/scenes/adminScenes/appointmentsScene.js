@@ -432,8 +432,8 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
             comment ? `\n4) ${comment}` : " ",
           ]);
 
-    await ctx.telegram //
-      .sendMessage(process.env.CHANNEL_ID, title, {
+    await ctx.telegram //process.env.CHANNEL_ID
+      .sendMessage(296846972, title, {
         reply_markup: {
           inline_keyboard: [
             [
@@ -454,6 +454,8 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
       .catch((e) => {});
 
     await queryRunner.commitTransaction();
+
+    io.emit("NEW_APPOINTMENT");
   } catch (err) {
     console.log(err);
     ctx.replyWithTitle(err.message ?? "DB_ERROR");

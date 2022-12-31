@@ -470,6 +470,8 @@ async function sendToAdmin(ctx) {
       console.log(res);
       ctx.scene.state.sent = true;
 
+      io.emit("NEW_APPOINTMENT");
+
       ctx.replyWithKeyboard("APPOINTMENT_SENT", "new_appointment_keyboard");
 
       const admins = await connection.getRepository("Admin").find();

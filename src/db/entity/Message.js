@@ -19,7 +19,7 @@ module.exports = new EntitySchema({
     },
     from_id: {
       type: "bigint",
-      nullable: false,
+      nullable: true,
     },
     from_admin: {
       type: "boolean",

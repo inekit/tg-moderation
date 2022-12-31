@@ -38,7 +38,7 @@ module.exports = async (
     ? undefined
     : ctx.getTitle("DIALOG_MESSAGE", [t, text ?? ""]);
 
-  const title_no_dialog = ctx.getTitle("NO_DIALOG_MESSAGE", [t, text]);
+  const title_no_dialog = ctx.getTitle("NO_DIALOG_MESSAGE", [t, text ?? ""]);
 
   let extra;
   if (toClient)

@@ -236,7 +236,7 @@ scene.on(
       ctx.scene.state.messages_ids.push(ctx.message.message_id);
 
     const text = ctx.message.text ?? ctx.message.caption;
-    const photo = ctx.message.photo?.[1].file_id;
+    const photo = ctx.message.photo?.[2].file_id;
     const file = ctx.message.document?.file_id;
     const video = ctx.message.video?.file_id;
     const voice = ctx.message.voice?.file_id;
@@ -302,7 +302,21 @@ scene.on(
           video_note,
         ]
       )
-      .then(async (res) => {})
+      .then(async (res) => {
+        io.emit("DIALOG_MESSAGE", {
+          id: message?.message_id,
+          second_id: second?.message_id,
+          dialog_id,
+          from_id: ctx.from.id,
+          text,
+          username: ctx.from.username,
+          photo: (await ctx.telegram.getFileLink(photo).catch(() => {}))?.href,
+          video,
+          voice,
+          file,
+          video_note,
+        });
+      })
       .catch((e) => {
         console.log(e);
         ctx.replyWithTitle("DB_ERROR");
