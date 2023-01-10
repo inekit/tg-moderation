@@ -10,12 +10,14 @@ const {
 function getId(req, res) {
   myId = req.session.passport.user.toString();
 
-  tOrmCon.then((connection) => {
-    connection
+  tOrmCon.then(async (connection) => {
+    const users = await connection
       .getRepository("Admin")
-      .find({ where: [{ id: myId }], select: ["id", "email", "nick"] })
-      .then((userData) => res.status(200).send(userData?.[0]))
+      .find({ where: [{ id: myId }], select: ["id", "user_id"] })
       .catch((error) => next(new MySqlError(error)));
+
+    console.log(1, users);
+    users?.[0] ? res.status(200).send(users?.[0]) : next(new MySqlError(error));
   });
 }
 

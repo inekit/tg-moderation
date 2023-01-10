@@ -8,6 +8,11 @@ module.exports = new EntitySchema({
       type: "bigint",
       primary: true,
     },
+    password: {
+      type: "varchar",
+      nullable: true,
+      length: 255,
+    },
     can_update_admins: {
       type: "boolean",
       default: false,

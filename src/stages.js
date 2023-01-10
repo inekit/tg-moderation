@@ -18,6 +18,7 @@ const mainStage = new Stage(
     require("./scenes/adminScenes/historyScene"),
     require("./scenes/adminScenes/searchDialogScene"),
     require("./scenes/adminScenes/dialogAdminScene"),
+    require("./scenes/adminScenes/changePasswordScene"),
   ],
   {
     default: "clientScene",

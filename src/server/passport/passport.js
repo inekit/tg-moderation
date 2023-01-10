@@ -4,48 +4,26 @@ const bcrypt = require("bcryptjs");
 const tOrmCon = require("../../db/connection");
 
 passport.serializeUser(function (user, done) {
-  console.log("Сериализация: ", user.id);
-  done(null, user.id);
+  console.log("Сериализация: ", user.user_id);
+  done(null, user.user_id);
 });
 
-passport.deserializeUser(function (id, done) {
-  console.log("Десериализация: ", id);
+passport.deserializeUser(function (user_id, done) {
+  console.log("Десериализация: ", user_id);
 
   tOrmCon.then((connection) => {
     const userRep = connection.getRepository("Admin");
 
-    userRep
-      .findOne({ where: { id: id } })
-      .then(function (user) {
-        console.log(1, user);
-        return connection
-          .getRepository("Admin")
-          .findOne({ where: { user: { id } } })
-          .then(() => {
-            user.isAdmin = true;
-            return done(null, user);
-          })
-          .catch(() => {
-            return done(null, user);
-          });
-      })
-      .catch(function (error) {
-        userRep
-          .findOne({ where: { vkId: id } })
-          .then(function (user) {
-            console.log(1, user);
-            done(null, user);
-          })
-          .catch(function (error) {
-            done(null, false);
-          });
-      });
+    userRep.findOne({ where: { user_id } }).then(function (user) {
+      console.log(1, user);
+      return done(null, user);
+    });
   });
 });
 
 passport.use(
   new LocalStrategy({ usernameField: "email" }, function (
-    email,
+    user_id,
     password,
     done
   ) {
@@ -61,10 +39,10 @@ passport.use(
 
           for (const userN of allUsers) {
             if (
-              email === userN.email &&
+              user_id === userN.user_id &&
               bcrypt.compareSync(password, userN.password)
             ) {
-              console.log("логин правильный, вы ", userN.id);
+              console.log("логин правильный, вы ", userN.user_id);
 
               return done(null, userN);
             }

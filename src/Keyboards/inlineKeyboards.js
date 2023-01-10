@@ -166,6 +166,9 @@ exports.appointments_list_keyboard = (
   return keyboard;
 };
 
+exports.password_actions_keyboard = (ctx) =>
+  inlineKeyboard([callbackButton("Сменить пароль", "change_password")]);
+
 exports.new_appointment_keyboard = (ctx) =>
   inlineKeyboard(
     [callbackButton("Заполнить новую заявку", "new_appointment")],

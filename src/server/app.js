@@ -12,13 +12,9 @@ const { isObject } = require("util");
 app.use(
   cors({
     origin: [
-      "http://127.0.0.1:8080",
-      "http://127.0.0.1:8000",
-      "http://localhost:8080",
-      ,
-      "http://localhost:8000",
-      "http://192.168.0.102:8080",
-      "http://192.168.0.102:8000",
+      "http://127.0.0.1:3040",
+      "http://localhost:3040",
+      "https://92.255.79.59",
     ],
     credentials: true,
   })
@@ -62,9 +58,9 @@ module.exports = (ctx) => {
     allowEIO3: true,
     cors: {
       origin: [
-        "http://127.0.0.1:8000",
-        "http://localhost:8000",
-        "http://192.168.0.102:8000",
+        "http://127.0.0.1:3040",
+        "http://localhost:3040",
+        "https://92.255.79.59",
       ],
       //
       credentials: true,

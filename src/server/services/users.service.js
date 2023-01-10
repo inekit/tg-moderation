@@ -68,12 +68,12 @@ class UsersService {
 
   editUser(user) {
     return new Promise((res, rej) => {
-      if (!user.id) return rej(new NoInputDataError({ id: user.id }));
+      //if (!user.id) return rej(new NoInputDataError({ id: user.id }));
 
       tOrmCon.then((connection) => {
         connection
           .getRepository("Admin")
-          .update({ id }, user)
+          .update({ user_id: user.user_id }, user)
           .then((data) => res(data))
           .catch((error) => rej(new MySqlError(error)));
       });

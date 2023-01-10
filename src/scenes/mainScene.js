@@ -235,8 +235,9 @@ scene
       delete ctx.scene.state.editHeaderFunc;
       delete ctx.scene.state.editKeyboard;
     },
-    onInput: (ctx) => {
+    onInput: async (ctx) => {
       ctx.wizard.state.input.comment = ctx.message.text;
+
       ctx.replyWithKeyboard(getSendHeader(ctx), "finish_send_keyboard");
       ctx.wizard.selectStep(ctx.wizard.cursor + 1);
 
@@ -338,6 +339,7 @@ scene
     cb: async (ctx) => {
       await ctx.answerCbQuery().catch((e) => {});
 
+      await ctx.replyWithPhoto(ctx.scene.state.input.photos).catch((e) => {});
       ctx.replyWithKeyboard(getDeliveryHeader(ctx), "finish_delivery_keyboard");
       ctx.wizard.selectStep(ctx.wizard.cursor + 1);
 
@@ -345,8 +347,10 @@ scene
       delete ctx.scene.state.editHeaderFunc;
       delete ctx.scene.state.editKeyboard;
     },
-    onInput: (ctx) => {
+    onInput: async (ctx) => {
       ctx.wizard.state.input.comment = ctx.message.text;
+
+      await ctx.replyWithPhoto(ctx.scene.state.input.photos).catch((e) => {});
       ctx.replyWithKeyboard(getDeliveryHeader(ctx), "finish_delivery_keyboard");
       ctx.wizard.selectStep(ctx.wizard.cursor + 1);
 
@@ -374,7 +378,6 @@ scene
 
       if (action !== "send") {
         ctx.replyStepByVariable(action);
-
         return ctx.setEditStep(
           "finish_delivery",
           getDeliveryHeader,
@@ -417,6 +420,9 @@ function getDeliveryHeader(ctx) {
     departure_date_back,
     comment,
   } = ctx.wizard.state.input;
+
+  ctx.replyWithPhoto(ctx.scene.state.input.photos).catch((e) => {});
+
   return ctx.getTitle("ENTER_FINISH_DELIVERY", [
     name,
     send_from,

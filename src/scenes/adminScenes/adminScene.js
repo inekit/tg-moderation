@@ -34,6 +34,10 @@ scene.hears(titles.getValues("BUTTON_REGISTER_ADMIN"), async (ctx) => {
   else ctx.replyWithTitle("AGENT_NOT_ADDED");
 });
 
+scene.hears(titles.getValues("BUTTON_ACCOUNT"), (ctx) =>
+  ctx.scene.enter("changePasswordScene", { main_menu_button })
+);
+
 scene.hears(titles.getValues("BUTTON_ADMINS"), (ctx) =>
   ctx.scene.enter("adminsScene", { main_menu_button })
 );

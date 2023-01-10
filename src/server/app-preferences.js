@@ -12,36 +12,36 @@ const {
   failSafeHandler,
 } = require("./middlewares/errorMiddleware");
 
-/*var sessionStore = new pgSession({
+var sessionStore = new pgSession({
   pool: sessionConnection,
-  tableName: 'session',
-  /*
-columnNames: {
-    sid: 'session_id',
-    expire: 'expires',
-    sess: 'data',
-    session_id: 'sid',
-    expires: 'expire',
-    data: 'sess',
+  tableName: "session",
+
+  columnNames: {
+    sid: "session_id",
+    expire: "expires",
+    sess: "data",
+    //session_id: "sid",
+    //expires: "expire",
+    // data: "sess",
   },
 
-  //expiration: 10800000,
-  //createDatabaseTable: true,
+  expiration: 10800000,
+  createDatabaseTable: true,
+  createTableIfMissing: true,
 });
-*/
 
 app.set("trust proxy", 1);
 
 app.use(
   session({
-    secret: "1234",
-    //store: sessionStore,
+    secret: "superdupersecret",
+    store: sessionStore,
     cookie: {
       path: "/",
-      httpOnly: false,
+      httpOnly: true,
       resave: false,
       maxAge: 60 * 60 * 1000,
-      secure: true,
+      secure: false,
     },
     resave: false,
     saveUninitialized: true,

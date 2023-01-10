@@ -1,8 +1,15 @@
 const passport = require("../passport/passport");
 const bcrypt = require("bcryptjs");
 const tOrmCon = require("../../db/connection");
-const salt = bcrypt.genSaltSync(10);
+require("dotenv").config();
+const salt = process.env.SALT;
 const usersService = require("../services/users.service");
+const {
+  HttpError,
+  MySqlError,
+  NotFoundError,
+  NoInputDataError,
+} = require("../utils/httpErrors");
 
 function loginLocal(req, res, next) {
   passport.authenticate("local", function (err, user) {
@@ -12,7 +19,7 @@ function loginLocal(req, res, next) {
 
     if (!user) {
       console.log("Укажите правильный email или пароль!");
-      return res.send(JSON.stringify({ isAutenticated: false }));
+      return next(new Error("Укажите правильный email или пароль!"));
     }
 
     req.logIn(user, function (err) {
@@ -26,16 +33,19 @@ function loginLocal(req, res, next) {
 }
 
 function registerLocal(req, res) {
-  if (!req.body.password || !req.body.nick || !req.body.email)
-    return res.send({ error: "no data" });
+  if (!req.body.password || !req.body.email)
+    return res.status(500).send({ error: "no data" });
 
   let password = bcrypt.hashSync(req.body.password, salt);
-  const user = { email: req.body.email, password, nick: req.body.nick };
+  const user = { user_id: req.body.email, password, nick: req.body.nick };
 
   usersService
-    .addUser(user)
+    .editUser(user)
     .then((userData) => res.send({ isRegistered: true }))
-    .catch((err) => res.send({ isRegistered: false }));
+    .catch((err) => {
+      console.log(err);
+      res.status(500).send({ isRegistered: false });
+    });
 }
 
 function editUser(req, res) {
@@ -45,7 +55,7 @@ function editUser(req, res) {
   let password = bcrypt.hashSync(req.body.password, salt);
   const user = {
     id: req.session.passport.user.toString(),
-    email: req.body.email,
+    user_id: req.body.user_id,
     password,
     nick: req.body.nick,
   };
@@ -57,12 +67,12 @@ function editUser(req, res) {
 }
 
 const auth = (req, res, next) => {
-  console.log(req.isAuthenticated());
-
+  console.log(123, req.isAuthenticated());
+  console.log("/ ", req.sessionID);
   if (req.isAuthenticated()) {
     next();
   } else {
-    return res.send(JSON.stringify({ isAutenticated: false }));
+    return res.status(500).send(JSON.stringify({ isAutenticated: false }));
   }
 };
 
@@ -83,6 +93,6 @@ module.exports = {
   },
   register: { local: registerLocal },
   auth,
-  authAdmin,
+  authAdmin: auth,
   editUser,
 };
