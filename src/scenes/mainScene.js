@@ -228,6 +228,8 @@ scene
     cb: async (ctx) => {
       await ctx.answerCbQuery().catch((e) => {});
 
+      ctx.wizard.state.input.pic = await getPic(ctx.from.id);
+
       ctx.replyWithKeyboard(getSendHeader(ctx), "finish_send_keyboard");
       ctx.wizard.selectStep(ctx.wizard.cursor + 1);
 
@@ -237,6 +239,7 @@ scene
     },
     onInput: async (ctx) => {
       ctx.wizard.state.input.comment = ctx.message.text;
+      ctx.wizard.state.input.pic = await getPic(ctx.from.id);
 
       ctx.replyWithKeyboard(getSendHeader(ctx), "finish_send_keyboard");
       ctx.wizard.selectStep(ctx.wizard.cursor + 1);
@@ -339,6 +342,8 @@ scene
     cb: async (ctx) => {
       await ctx.answerCbQuery().catch((e) => {});
 
+      ctx.wizard.state.input.pic = await getPic(ctx.from.id);
+
       await ctx.replyWithPhoto(ctx.scene.state.input.photos).catch((e) => {});
       ctx.replyWithKeyboard(getDeliveryHeader(ctx), "finish_delivery_keyboard");
       ctx.wizard.selectStep(ctx.wizard.cursor + 1);
@@ -349,6 +354,7 @@ scene
     },
     onInput: async (ctx) => {
       ctx.wizard.state.input.comment = ctx.message.text;
+      ctx.wizard.state.input.pic = await getPic(ctx.from.id);
 
       await ctx.replyWithPhoto(ctx.scene.state.input.photos).catch((e) => {});
       ctx.replyWithKeyboard(getDeliveryHeader(ctx), "finish_delivery_keyboard");
@@ -389,6 +395,37 @@ scene
     },
   });
 
+async function getPic(customer_id) {
+  const connection = await tOrmCon;
+
+  const status = (
+    await connection
+      .query("select status from users where id = $1 limit 1", [customer_id])
+      .catch(console.log)
+  )?.[0]?.status;
+
+  const a_count = (
+    await connection
+      .query(
+        "select count(*) a_count from appointments where status = 'aprooved' and customer_id = $1",
+        [customer_id]
+      )
+      .catch((e) => {
+        console.log(e);
+      })
+  )?.[0]?.a_count;
+
+  return status === "reliable"
+    ? "🟢"
+    : a_count >= 5
+    ? "🟡"
+    : a_count >= 1
+    ? "🟠"
+    : a_count === 0
+    ? "🔴"
+    : "";
+}
+
 function getSendHeader(ctx) {
   const {
     what_need,
@@ -398,8 +435,10 @@ function getSendHeader(ctx) {
     send_to,
     description,
     comment,
+    pic,
   } = ctx.wizard.state.input;
   return ctx.getTitle("ENTER_FINISH_SEND", [
+    pic,
     name,
     send_from,
     send_to,
@@ -419,11 +458,13 @@ function getDeliveryHeader(ctx) {
     departure_date,
     departure_date_back,
     comment,
+    pic,
   } = ctx.wizard.state.input;
 
   ctx.replyWithPhoto(ctx.scene.state.input.photos).catch((e) => {});
 
   return ctx.getTitle("ENTER_FINISH_DELIVERY", [
+    pic,
     name,
     send_from,
     send_to,
@@ -482,28 +523,12 @@ async function sendToAdmin(ctx) {
 
       const admins = await connection.getRepository("Admin").find();
       for (admin of admins) {
-        ctx.telegram.sendMessage(
-          admin.user_id,
-          what_need === "send"
-            ? ctx.getTitle("A_ENTER_FINISH_SEND", [
-                name,
-                send_from,
-                send_to,
-                description,
-                contacts,
-                comment ? `\n${comment}` : " ",
-              ])
-            : ctx.getTitle("A_ENTER_FINISH_DELIVERY", [
-                name,
-                send_from,
-                send_to,
-                departure_date_back ? "и обратно" : " ",
-                departure_date,
-                departure_date_back ? ` 🛬 ${departure_date_back}` : " ",
-                contacts,
-                comment ? `\n5) ${comment}` : " ",
-              ])
+        const title = await require("../Utils/titleFromDataObj")(
+          ctx.scene.state.input,
+          "A_ENTER_FINISH",
+          ctx
         );
+        ctx.telegram.sendMessage(admin.user_id, title);
       }
     })
     .catch(async (e) => {

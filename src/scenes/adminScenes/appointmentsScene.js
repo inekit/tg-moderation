@@ -21,7 +21,7 @@ const scene = new CustomWizardScene("appointmentsScene").enter(async (ctx) => {
 
   const connection = await tOrmCon;
   const query =
-    "select wa.*, u.username from appointments wa left join users u on wa.customer_id = u.id where status = 'issued' order by datetime_created limit 1";
+    "select wa.*, u.username from appointments wa left join users u on wa.customer_id = u.id where wa.status = 'issued' order by datetime_created limit 1";
   const lastWa = (ctx.scene.state.lastWa = (
     await connection.query(query).catch((e) => {})
   )?.[0]);
@@ -38,42 +38,13 @@ const scene = new CustomWizardScene("appointmentsScene").enter(async (ctx) => {
 
   const keyboard = { name: "wa_keyboard", args: [lastWa.id] };
 
-  const {
-    id,
-    what_need,
-    name,
-    contacts,
-    send_from,
-    send_to,
-    departure_date,
-    departure_date_back,
-    comment_delivery,
-    comment,
-    description,
-  } = (ctx.scene.state.lastWa = lastWa);
+  ctx.scene.state.lastWa = lastWa;
 
-  const title =
-    what_need === "send"
-      ? ctx.getTitle("ENTER_FINISH_SEND_ADMIN", [
-          id,
-          name,
-          send_from,
-          send_to,
-          description,
-          contacts,
-          comment ? `\n${comment}` : " ",
-        ])
-      : ctx.getTitle("ENTER_FINISH_DELIVERY_ADMIN", [
-          id,
-          name,
-          send_from,
-          send_to,
-          departure_date_back ? "и обратно" : " ",
-          departure_date,
-          departure_date_back ? ` 🛬 ${departure_date_back}` : " ",
-          contacts,
-          comment ? `\n5) ${comment}` : " ",
-        ]);
+  const title = await require("../../Utils/titleFromDataObj")(
+    lastWa,
+    "ENTER_FINISH_ADMIN",
+    ctx
+  );
 
   if (edit) return ctx.editMenu(title, keyboard);
 
@@ -221,21 +192,23 @@ scene
 
 function getUpdateHeader(ctx) {
   const {
-    id,
+    id: appointment_id,
+    pic,
     name,
-    what_need,
     send_from,
     send_to,
     description,
     contacts,
     comment,
-    departure_date_back,
     departure_date,
-  } = ctx.wizard.state.input ?? {};
+    departure_date_back,
+    what_need,
+  } = ctx.wizard.state.input;
 
   return what_need === "send"
     ? ctx.getTitle("ENTER_FINISH_SEND_ADMIN", [
-        id,
+        appointment_id,
+        pic,
         name,
         send_from,
         send_to,
@@ -244,7 +217,8 @@ function getUpdateHeader(ctx) {
         comment ? `\n${comment}` : " ",
       ])
     : ctx.getTitle("ENTER_FINISH_DELIVERY_ADMIN", [
-        id,
+        appointment_id,
+        pic,
         name,
         send_from,
         send_to,
@@ -301,28 +275,46 @@ async function rejectAppointment(ctx) {
     });
 }
 
-scene.action(/^edit\-(.+)$/g, (ctx) => {
+scene.action(/^edit\-(.+)$/g, async (ctx) => {
   ctx.answerCbQuery().catch(console.log);
 
   ctx.scene.state.reference_id = ctx.match[1];
 
-  ctx.scene.state.input = {
-    name,
-    contacts,
-    send_from,
-    send_to,
-    departure_date,
-    departure_date_back,
-    comment,
-    description,
-    what_need,
-  } = ctx.scene.state.lastWa;
+  ctx.scene.state.input = ctx.scene.state.lastWa;
+
+  const connection = await tOrmCon;
+
+  const status = (
+    await connection
+      .query("select status from users where id = $1 limit 1", [
+        ctx.scene.state.lastWa.customer_id,
+      ])
+      .catch(console.log)
+  )?.[0]?.status;
+
+  const a_count = (
+    await connection.query(
+      "select count(*) a_count from appointments where status = 'aprooved' and customer_id = $1",
+      [ctx.scene.state.lastWa.customer_id]
+    )
+  )?.[0]?.a_count;
+
+  ctx.scene.state.input.pic =
+    status === "reliable"
+      ? "🟢"
+      : a_count >= 5
+      ? "🟡"
+      : a_count >= 1
+      ? "🟠"
+      : a_count === 0
+      ? "🔴"
+      : "";
 
   console.log(ctx.scene.state.input);
 
   ctx.replyWithKeyboard(getUpdateHeader(ctx), {
     name: "finish_updating_keyboard",
-    args: [what_need],
+    args: [ctx.scene.state.lastWa.what_need],
   });
   ctx.wizard.selectStep(9);
 });
@@ -397,42 +389,33 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
 
     const { customer_id } = (ctx.scene.state.appointment_data = res[0]?.[0]);
 
-    const {
-      id,
-      what_need,
-      name,
-      contacts,
-      send_from,
-      send_to,
-      departure_date,
-      departure_date_back,
-      comment_delivery,
-      comment,
-      description,
-    } = ctx.scene.state.lastWa;
+    const a_count = (
+      await connection.query(
+        "select count(*) a_count from appointments where status = 'aprooved' and customer_id = $1",
+        [customer_id]
+      )
+    )?.[0]?.a_count;
 
-    const title =
-      what_need === "send"
-        ? ctx.getTitle("ENTER_FINISH_SEND_PUBLIC", [
-            id,
-            name,
-            send_from,
-            send_to,
-            description,
-            comment ? `\n${comment}` : " ",
-          ])
-        : ctx.getTitle("ENTER_FINISH_DELIVERY_PUBLIC", [
-            id,
-            name,
-            send_from,
-            send_to,
-            departure_date_back ? "и обратно" : " ",
-            departure_date,
-            departure_date_back ? ` 🛬 ${departure_date_back}` : " ",
-            comment ? `\n4) ${comment}` : " ",
-          ]);
+    const status = (
+      await queryRunner.query(
+        "select status from users where id = $1 limit 1",
+        [customer_id]
+      )
+    )?.[0]?.status;
 
-    await ctx.telegram //
+    if (status !== "reliable")
+      await queryRunner.query("update users set status = $1 where id = $2", [
+        a_count >= 5 ? "regular" : a_count >= 1 ? "user" : "newbie",
+        customer_id,
+      ]);
+
+    const title = await require("../../Utils/titleFromDataObj")(
+      ctx.scene.state.lastWa,
+      "ENTER_FINISH_PUBLIC",
+      ctx
+    );
+
+    await ctx.telegram //process.env.CHANNEL_ID
       .sendMessage(process.env.CHANNEL_ID, title, {
         reply_markup: {
           inline_keyboard: [

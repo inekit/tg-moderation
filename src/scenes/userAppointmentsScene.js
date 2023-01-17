@@ -78,42 +78,13 @@ scene.action(/^item\-([0-9]+)$/g, async (ctx) => {
 
   await ctx.replyWithPhoto(item.photo).catch((e) => {});
 
-  const {
-    id,
-    what_need,
-    name,
-    contacts,
-    send_from,
-    send_to,
-    departure_date,
-    departure_date_back,
-    comment_delivery,
-    comment,
-    description,
-  } = (ctx.scene.state.item = item);
+  ctx.scene.state.item = item;
 
-  const title =
-    what_need === "send"
-      ? ctx.getTitle("ENTER_FINISH_SEND_ADMIN", [
-          id,
-          name,
-          send_from,
-          send_to,
-          description,
-          contacts,
-          comment ? `\n${comment}` : " ",
-        ])
-      : ctx.getTitle("ENTER_FINISH_DELIVERY_ADMIN", [
-          id,
-          name,
-          send_from,
-          send_to,
-          departure_date_back ? "и обратно" : " ",
-          departure_date,
-          departure_date_back ? ` 🛬 ${departure_date_back}` : " ",
-          contacts,
-          comment ? `\n5) ${comment}` : " ",
-        ]);
+  const title = await require("../Utils/titleFromDataObj")(
+    item,
+    "ENTER_FINISH_ADMIN",
+    ctx
+  );
 
   return ctx.replyWithKeyboard(title, keyboard);
 });

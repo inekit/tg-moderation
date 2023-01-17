@@ -36,6 +36,12 @@ module.exports = new EntitySchema({
       type: "bigint",
       nullable: true,
     },
+    status: {
+      type: "enum",
+      enum: ["newbie", "user", "regular", "reliable", "restricted"],
+      nullable: false,
+      default: "newbie",
+    },
   },
   relations: {
     referer: {

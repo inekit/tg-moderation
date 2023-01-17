@@ -198,43 +198,15 @@ async function getItem(ctx, item_id) {
 
   const keyboard = "go_back_keyboard";
 
-  const {
-    id,
-    what_need,
-    name,
-    send_from,
-    send_to,
-    description,
-    contacts,
-    comment,
-    departure_date_back,
-    departure_date,
-  } = item;
-
   await ctx.replyWithPhoto(item.photo).catch((e) => {});
 
-  const title =
-    what_need === "send"
-      ? ctx.getTitle("ENTER_FINISH_SEND_ADMIN", [
-          id,
-          name,
-          send_from,
-          send_to,
-          description,
-          contacts,
-          comment ? `\n${comment}` : " ",
-        ])
-      : ctx.getTitle("ENTER_FINISH_DELIVERY_ADMIN", [
-          id,
-          name,
-          send_from,
-          send_to,
-          departure_date_back ? "и обратно" : " ",
-          departure_date,
-          departure_date_back ? ` 🛬 ${departure_date_back}` : " ",
-          contacts,
-          comment ? `\n5) ${comment}` : " ",
-        ]);
+  ctx.scene.state.item = item;
+
+  const title = await require("../../Utils/titleFromDataObj")(
+    item,
+    "ENTER_FINISH_ADMIN",
+    ctx
+  );
 
   return ctx.replyWithKeyboard(title, keyboard);
 }
@@ -255,7 +227,7 @@ async function getItems(offset, perPage) {
   return await connection
     .query(
       `select a.*, username
-        from appointments a left join users u on a.customer_id = u.id order by id DESC limit $1 offset $2`,
+        from appointments a left join users u on a.customer_id = u.id where a.status <> 'issued' order by id DESC limit $1 offset $2`,
       [perPage, offset * perPage]
     )
     .catch((e) => {

@@ -166,6 +166,13 @@ exports.appointments_list_keyboard = (
   return keyboard;
 };
 
+exports.user_actions_keyboard = (ctx, id) =>
+  inlineKeyboard([
+    [callbackButton("Сделать надежным", "status_reliable_" + id)],
+    [callbackButton("По кол. объявлений", "status_count_" + id)],
+    [callbackButton("Забанить", "status_restricted_" + id)],
+  ]);
+
 exports.password_actions_keyboard = (ctx) =>
   inlineKeyboard([callbackButton("Сменить пароль", "change_password")]);
 

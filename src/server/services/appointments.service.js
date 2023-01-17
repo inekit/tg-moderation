@@ -67,7 +67,7 @@ class UsersService {
             where ((lower(comment) like lower($1) or $1 is NULL) or (lower(description) like lower($1) or $1 is NULL))
               and (send_from = $2 or $2 is NULL)  
               and (send_to = $3 or $3 is NULL)  
-              and (status = $4 or $4 is NULL)  
+              and (a.status = $4 or $4 is NULL)  
               and (lower(username) like lower($5) or $5 is NULL)
               order by a.datetime_created DESC
               LIMIT $6 OFFSET $7`,

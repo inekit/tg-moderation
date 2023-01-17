@@ -36,20 +36,7 @@ const scene = new CustomWizardScene("dialogSellerScene").enter(async (ctx) => {
     .query(`update dialogs set opened_seller = true where id = $1`, [dialog_id])
     .catch((e) => {});
 
-  const {
-    client_id,
-    client_username,
-    appointment_id,
-    what_need,
-    name,
-    contacts,
-    send_from,
-    send_to,
-    departure_date,
-    departure_date_back,
-    comment,
-    description,
-  } = (ctx.scene.state.item = (
+  const t_data = (ctx.scene.state.item = (
     await connection
       .query(
         `select client_id, username client_username, a.* ,d.appointment_id
@@ -61,6 +48,8 @@ const scene = new CustomWizardScene("dialogSellerScene").enter(async (ctx) => {
       )
       .catch((e) => {})
   )?.[0]);
+
+  const { client_id, client_username, appointment_id } = t_data;
 
   ctx.scene.state.client_id = client_id;
   ctx.scene.state.client_username = client_username;
@@ -118,26 +107,11 @@ const scene = new CustomWizardScene("dialogSellerScene").enter(async (ctx) => {
     (await ctx.telegram.sendMessage(ctx.chat.id, messagesStr))?.message_id
   );
 
-  const title =
-    what_need === "send"
-      ? ctx.getTitle("ENTER_FINISH_SEND", [
-          name,
-          send_from,
-          send_to,
-          description,
-          contacts,
-          comment ? `\n${comment}` : " ",
-        ])
-      : ctx.getTitle("ENTER_FINISH_DELIVERY", [
-          name,
-          send_from,
-          send_to,
-          departure_date_back ? "и обратно" : " ",
-          departure_date,
-          departure_date_back ? ` 🛬 ${departure_date_back}` : " ",
-          contacts,
-          comment ? `\n5) ${comment}` : " ",
-        ]);
+  const title = await require("../Utils/titleFromDataObj")(
+    t_data,
+    "ENTER_FINISH",
+    ctx
+  );
 
   messages_ids.push(
     (await ctx.replyWithKeyboard(title, "dialog_keyboard"))?.message_id

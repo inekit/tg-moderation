@@ -58,5 +58,8 @@ scene.hears(titles.getValues("BUTTON_SEARCH_A"), (ctx) =>
 scene.hears(titles.getValues("BUTTON_SEARCH_U"), (ctx) =>
   ctx.scene.enter("searchDialogScene", { main_menu_button, mode: "username" })
 );
+scene.hears(titles.getValues("BUTTON_CHANGE_RIGHTS"), (ctx) =>
+  ctx.scene.enter("changeRightsScene", { main_menu_button, mode: "username" })
+);
 
 module.exports = scene;

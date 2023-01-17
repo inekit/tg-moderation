@@ -31,15 +31,6 @@ const scene = new CustomWizardScene("dialogAdminScene").enter(async (ctx) => {
     seller_id,
     seller_username,
     appointment_id,
-    what_need,
-    name,
-    contacts,
-    send_from,
-    send_to,
-    departure_date,
-    departure_date_back,
-    comment,
-    description,
   } = (ctx.scene.state.item = (
     await connection
       .query(
@@ -97,28 +88,11 @@ const scene = new CustomWizardScene("dialogAdminScene").enter(async (ctx) => {
     (await ctx.telegram.sendMessage(ctx.chat.id, messagesStr))?.message_id
   );
 
-  const title =
-    what_need === "send"
-      ? ctx.getTitle("ENTER_FINISH_SEND_ADMIN", [
-          appointment_id,
-          name,
-          send_from,
-          send_to,
-          description,
-          contacts,
-          comment ? `\n${comment}` : " ",
-        ])
-      : ctx.getTitle("ENTER_FINISH_DELIVERY_ADMIN", [
-          appointment_id,
-          name,
-          send_from,
-          send_to,
-          departure_date_back ? "и обратно" : " ",
-          departure_date,
-          departure_date_back ? ` 🛬 ${departure_date_back}` : " ",
-          contacts,
-          comment ? `\n5) ${comment}` : " ",
-        ]);
+  const title = await require("../../Utils/titleFromDataObj")(
+    ctx.scene.state.item,
+    "ENTER_FINISH_ADMIN",
+    ctx
+  );
 
   messages_ids.push(
     (await ctx.replyWithKeyboard(title, "dialog_keyboard"))?.message_id

@@ -4,6 +4,7 @@ const {
   Composer,
 } = require("telegraf");
 const titles = require("telegraf-steps").titlesGetter(__dirname + "/Titles");
+const getUser = require("./Utils/getUser");
 
 const mainStage = new Stage(
   [
@@ -19,11 +20,21 @@ const mainStage = new Stage(
     require("./scenes/adminScenes/searchDialogScene"),
     require("./scenes/adminScenes/dialogAdminScene"),
     require("./scenes/adminScenes/changePasswordScene"),
+    require("./scenes/adminScenes/changeRightsScene"),
   ],
   {
     default: "clientScene",
   }
 );
+
+mainStage.use(async (ctx, next) => {
+  const user = await getUser(ctx);
+
+  if (user.status === "restricted")
+    return ctx.replyWithKeyboard("YOU_ARE_RESTRICTED", "remove_keyboard");
+
+  return next();
+});
 
 mainStage.start(async (ctx) => ctx.scene.enter("clientScene"));
 mainStage.action(/^dialog\-([0-9]+)$/g, async (ctx) => {
