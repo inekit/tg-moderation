@@ -1,5 +1,5 @@
 const tOrmCon = require("../db/connection");
-
+const moment = require("moment");
 module.exports = async (dataObj = {}, title, ctx) => {
   let {
     id,
@@ -18,6 +18,11 @@ module.exports = async (dataObj = {}, title, ctx) => {
     seller_id,
     customer_id,
   } = dataObj;
+
+  departure_date = moment(departure_date)?.format("DD.MM.YYYY");
+  departure_date_back = departure_date_back
+    ? moment(departure_date_back)?.format("DD.MM.YYYY")
+    : departure_date_back;
 
   appointment_id = appointment_id ?? id;
 
@@ -149,6 +154,29 @@ module.exports = async (dataObj = {}, title, ctx) => {
             departure_date_back ? ` 🛬 ${departure_date_back}` : " ",
             contacts,
             comment ? `\n5) ${comment}` : " ",
+          ]);
+  else if (title === "ENTER_FINISH_SUBSCRIPTION")
+    titleSrt =
+      what_need === "send"
+        ? ctx.getTitle("ENTER_FINISH_SEND_SUBSCRIPTION", [
+            appointment_id,
+            pic,
+            name,
+            send_from,
+            send_to,
+            description,
+            comment ? `\n${comment}` : " ",
+          ])
+        : ctx.getTitle("ENTER_FINISH_DELIVERY_SUBSCRIPTION", [
+            appointment_id,
+            pic,
+            name,
+            send_from,
+            send_to,
+            departure_date_back ? "и обратно" : " ",
+            departure_date,
+            departure_date_back ? ` 🛬 ${departure_date_back}` : " ",
+            comment ? `\n4) ${comment}` : " ",
           ]);
 
   return titleSrt;

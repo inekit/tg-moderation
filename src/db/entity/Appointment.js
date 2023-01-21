@@ -54,13 +54,11 @@ module.exports = new EntitySchema({
       nullable: "false",
     },
     departure_date: {
-      type: "varchar",
-      length: "10",
+      type: "date",
       nullable: "true",
     },
     departure_date_back: {
-      type: "varchar",
-      length: "10",
+      type: "date",
       nullable: "true",
     },
     comment: {

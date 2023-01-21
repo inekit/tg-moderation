@@ -322,7 +322,7 @@ scene.action(/^edit\-(.+)$/g, async (ctx) => {
 async function confirmAction(ctx, item_id) {
   await ctx.answerCbQuery().catch(console.log);
 
-  const {
+  let {
     name,
     contacts,
     send_from,
@@ -332,6 +332,11 @@ async function confirmAction(ctx, item_id) {
     comment,
     description,
   } = ctx.scene.state.input;
+
+  departure_date = moment(departure_date, "DD.MM.YYYY");
+  departure_date_back = departure_date_back
+    ? moment(departure_date_back, "DD.MM.YYYY")
+    : departure_date_back;
 
   const connection = await tOrmCon;
   connection
@@ -383,7 +388,7 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
 
   try {
     const res = await queryRunner.query(
-      "update appointments set status = 'aprooved' where id = $1 returning customer_id",
+      "update appointments set status = 'aprooved' where id = $1 returning *",
       [ctx.match[1]]
     );
 
@@ -415,8 +420,56 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
       ctx
     );
 
+    const {
+      what_need,
+      send_from,
+      send_to,
+      departure_date,
+      departure_date_back,
+    } = ctx.scene.state.appointment_data;
+
+    if (what_need === "delivery") {
+      const subscriptions = await queryRunner.query(
+        `select client_id from subscriptions where 
+        ( ( (send_from=$1) and (send_to=$2)
+            and (date_finish>=$3 or $3 is null) and (date_start<=$3 or $3 is null) )
+            or ( (send_from=$2) and (send_to=$1)
+            and (date_finish>=$4 or $4 is null) and (date_start<=$4 or $4 is null) ) )
+        group by client_id
+        `,
+        [send_from, send_to, departure_date, departure_date_back]
+      );
+
+      console.log(subscriptions);
+
+      const s_title = await require("../../Utils/titleFromDataObj")(
+        ctx.scene.state.lastWa,
+        "ENTER_FINISH_SUBSCRIPTION",
+        ctx
+      );
+
+      for (s of subscriptions) {
+        console.log(s);
+
+        await ctx.telegram
+          .sendMessage(s.client_id, s_title, {
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  urlButton(
+                    ctx.getTitle("SEND_DIALOG_REQUEST"),
+                    `t.me/${ctx.botInfo.username}/?start=dialog-${ctx.match[1]}`
+                  ),
+                ],
+              ],
+            },
+          })
+          .catch(console.log);
+      }
+    }
+
     await ctx.telegram //process.env.CHANNEL_ID
-      .sendMessage(process.env.CHANNEL_ID, title, {
+      .sendMessage(ctx.from.id, title, {
         reply_markup: {
           inline_keyboard: [
             [
@@ -427,7 +480,8 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
             ],
           ],
         },
-      });
+      })
+      .catch(console.log);
 
     await ctx.telegram
       .sendMessage(

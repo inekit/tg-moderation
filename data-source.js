@@ -7,6 +7,7 @@ const Admin = require("./src/db/entity/Admin");
 const Appointment = require("./src/db/entity/Appointment");
 const Dialog = require("./src/db/entity/Dialog");
 const Message = require("./src/db/entity/Message");
+const Subscription = require("./src/db/entity/Subscription");
 
 const { DataSource } = require("typeorm");
 
@@ -19,7 +20,7 @@ const AppDataSource = new DataSource({
   username: DB_USER,
   password: DB_PASSWORD,
   database: DB_DATABASE,
-  entities: [User, Admin, Appointment, Dialog, Message],
+  entities: [User, Admin, Appointment, Dialog, Message, Subscription],
   synchronize: true,
   migrationsTableName: "custom_migration_table",
   migrations: ["./src/db/migrations/*.js"],

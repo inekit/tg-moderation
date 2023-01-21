@@ -2,7 +2,10 @@ const servicePreset = require("../services/crud.service").getService(
   "Appointment",
   ["customer_id", "what_need", "name", "contacts", "send_from", "send_to"]
 );
-const { getAll: gAP } = require("../services/appointments.service");
+const {
+  getAll: gAP,
+  getFilteredAddr,
+} = require("../services/appointments.service");
 const publishPost = require("../../Utils/publishPost");
 function getAll(ctx) {
   return async (req, res, next) => {
@@ -17,6 +20,14 @@ function getOne(req, res, next) {
     .get(req.query.id, 1, 1)
     .then((data) => res.send(data))
     .catch((error) => next(error));
+}
+
+function getFiltered(ctx) {
+  return async (req, res, next) => {
+    getFilteredAddr(req.query, ctx)
+      .then((data) => res.send("true"))
+      .catch((error) => next(error));
+  };
 }
 
 function addOne(req, res, next) {
@@ -59,4 +70,5 @@ module.exports = {
   addOne,
   editOne,
   deleteOne,
+  getFiltered,
 };

@@ -2,7 +2,16 @@ const { Markup } = require("telegraf");
 
 const callbackButton = Markup.button.callback;
 const urlButton = Markup.button.url;
+const webAppButton = Markup.button.webApp;
 const { inlineKeyboard } = Markup;
+const moment = require("moment");
+const { stat } = require("fs");
+
+exports.filters_keyboard = (ctx, user_id) =>
+  inlineKeyboard([
+    [urlButton("Сайт", "https:///92.255.79.59/all/" + user_id)],
+    //[webAppButton("Сайт", "https:///92.255.79.59/all/" + user_id)]
+  ]);
 
 exports.confirm_keyboard = (ctx) =>
   inlineKeyboard([callbackButton(ctx.getTitle("BUTTON_CONFIRM"), "confirm")]);
@@ -119,13 +128,83 @@ exports.search_a_list_keyboard = (ctx, data, offset) => {
   return keyboard;
 };
 
+exports.search_no_items = (ctx) =>
+  inlineKeyboard([
+    callbackButton(ctx.getTitle("BUTTON_SUBSCRIBE"), `subscribe`),
+  ]);
+
+exports.search_list_keyboard = (ctx, data, prefix, cardId, offset, from) => {
+  const keyboard = inlineKeyboard(
+    data.map(
+      ({
+        name,
+        send_from,
+        send_to,
+        departure_date,
+        departure_date_back,
+        description,
+        comment,
+        status,
+        id,
+      }) =>
+        callbackButton(
+          `${moment(
+            from === send_from ? departure_date : departure_date_back
+          ).format("DD.MM.YYYY")} ${
+            status === "reliable"
+              ? "🟢"
+              : status === "regular"
+              ? "🟡"
+              : status === "user"
+              ? "🟠"
+              : status === "newbie"
+              ? "🔴"
+              : "БАН"
+          } ${comment ?? " "}`,
+          prefix + "-" + id
+        )
+    ),
+    { columns: 1 }
+  );
+
+  const p2 =
+    prefix === "item" ? "category" : prefix === "subcategory" ? "category" : "";
+
+  if (prefix === "item" && p2) {
+    const b = [];
+
+    if (offset > 0)
+      b.push(
+        callbackButton(
+          ctx.getTitle("BUTTON_PREVIOUS"),
+          `get_${cardId}_${Number(offset) - 1}`
+        )
+      );
+
+    b.push(
+      callbackButton(
+        ctx.getTitle("BUTTON_NEXT"),
+        `get_${cardId}_${Number(offset) + 1}`
+      )
+    );
+
+    keyboard.reply_markup.inline_keyboard.push(b);
+  }
+
+  keyboard.reply_markup.inline_keyboard.push([
+    callbackButton(ctx.getTitle("BUTTON_SUBSCRIBE"), `subscribe`),
+  ]);
+
+  return keyboard;
+};
+
 exports.appointments_list_keyboard = (
   ctx,
   data,
   prefix,
   cardId,
   offset,
-  noadd
+  subscribeBtn
 ) => {
   const keyboard = inlineKeyboard(
     data.map(({ name, send_from, send_to, id }) =>
@@ -162,6 +241,11 @@ exports.appointments_list_keyboard = (
 
     keyboard.reply_markup.inline_keyboard.push(b);
   }
+
+  if (subscribeBtn)
+    keyboard.reply_markup.inline_keyboard.push([
+      callbackButton(ctx.getTitle("BUTTON_SUBSCRIBE"), `subscribe`),
+    ]);
 
   return keyboard;
 };

@@ -32,6 +32,40 @@ class UsersService {
     });
   }
 
+  getFilteredAddr(
+    { user_id, send_from, send_to, date_start, date_finish },
+    ctx
+  ) {
+    return new Promise(async (res, rej) => {
+      console.log(date_start, date_finish);
+
+      const dataStr = `${send_from}-${send_to}-${new Date(date_start)
+        ?.getTime()
+        ?.toString()
+        ?.substr(0, 8)}-${new Date(date_finish)
+        ?.getTime()
+        ?.toString()
+        ?.substr(0, 8)}`;
+
+      await ctx.telegram
+        .sendMessage(user_id, "Нажмите, чтобы перейти к результатам поиска", {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "Показать результаты",
+                  callback_data: dataStr,
+                },
+              ],
+            ],
+          },
+        })
+        .catch(console.log);
+
+      res("https://t.me/bobobobobobt_bot");
+    });
+  }
+
   getAll(
     {
       id,

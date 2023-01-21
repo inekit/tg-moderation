@@ -45,6 +45,25 @@ const scene = new CustomWizardScene("clientScene").enter(async (ctx) => {
     )
     .catch((e) => {});
 
+  const filters =
+    /filters\?send_from\=(.+)\&send_to\=(.+)\&date_start\=(.+)\&date_finish\=(.+)/g.exec(
+      ctx.startPayload
+    );
+
+  console.log(1234);
+
+  if (filters) {
+    const [send_from, send_to, date_start, date_finish] = filters;
+
+    console.log(send_from, send_to, date_start, date_finish);
+    ctx.scene.enter("searchResultScene", {
+      send_from,
+      send_to,
+      date_start,
+      date_finish,
+    });
+  }
+
   const appointment_id = /dialog\-([0-9]+)/g.exec(ctx.startPayload)?.[1];
 
   if (appointment_id)
@@ -73,6 +92,13 @@ scene.hears(titles.getValues("APPOINTMENTS_BUTTON"), async (ctx) => {
   ctx.scene.enter("userAppointmentsScene");
 });
 scene.hears(titles.getValues("DIALOGS_BUTTON"), async (ctx) => getDialogs(ctx));
+
+scene.hears(titles.getValues("SUBSCRIPTIONS_BUTTON"), async (ctx) => {
+  ctx.replyWithKeyboard("CHOOSE_FILTERS_TITLE", {
+    name: "filters_keyboard",
+    args: [ctx.from.id],
+  });
+});
 
 async function getDialogs(ctx) {
   ctx.wizard?.selectStep(0);
@@ -449,7 +475,7 @@ function getSendHeader(ctx) {
 }
 
 function getDeliveryHeader(ctx) {
-  const {
+  let {
     what_need,
     name,
     contacts,
@@ -491,6 +517,17 @@ async function sendToAdmin(ctx) {
     photos,
     description,
   } = ctx.wizard.state.input;
+
+  console.log(123, departure_date);
+
+  ctx.wizard.state.input.departure_date = departure_date = moment(
+    departure_date,
+    "DD.MM.YYYY"
+  ).toDate();
+  ctx.wizard.state.input.departure_date_back = departure_date_back =
+    departure_date_back
+      ? moment(departure_date_back, "DD.MM.YYYY").toDate()
+      : departure_date_back;
 
   //console.log(ctx.wizard.state);
 

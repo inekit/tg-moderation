@@ -46,5 +46,7 @@ module.exports = (ctx) => {
     return res.send(JSON.stringify({ isAuthenticated: req.isAuthenticated() }));
   });
 
+  router.get("/filter", AppointmentsController.getFiltered(ctx));
+
   return router;
 };

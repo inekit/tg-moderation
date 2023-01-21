@@ -12,6 +12,7 @@ const mainStage = new Stage(
     require("./scenes/dialogScene"),
     require("./scenes/dialogSellerScene"),
     require("./scenes/userAppointmentsScene"),
+    require("./scenes/searchResultScene"),
 
     require("./scenes/adminScenes/adminScene"),
     require("./scenes/adminScenes/adminsScene"),
@@ -37,6 +38,27 @@ mainStage.use(async (ctx, next) => {
 });
 
 mainStage.start(async (ctx) => ctx.scene.enter("clientScene"));
+
+mainStage.action(/^(.+)\-(.+)\-(.+)\-(.+)/g, async (ctx) => {
+  await ctx.answerCbQuery().catch(console.log);
+
+  let [full_str, send_from, send_to, date_start, date_finish] = ctx.match;
+
+  console.log(ctx.match);
+
+  send_from = send_from !== "undefined" ? send_from : null;
+  send_to = send_to !== "undefined" ? send_to : null;
+  date_start = date_start !== "undefined" ? date_start + "00" : null;
+  date_finish = date_finish !== "undefined" ? date_finish + "00" : null;
+
+  ctx.scene.enter("searchResultScene", {
+    send_from,
+    send_to,
+    date_start,
+    date_finish,
+  });
+});
+
 mainStage.action(/^dialog\-([0-9]+)$/g, async (ctx) => {
   await ctx.answerCbQuery().catch(console.log);
 

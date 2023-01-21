@@ -42,7 +42,8 @@ exports.main_keyboard = (ctx, isAdmin) => {
   buttons.push(
     [ctx.getTitle("NEW_APPOINTMENT_BUTTON")],
     [ctx.getTitle("APPOINTMENTS_BUTTON")],
-    [ctx.getTitle("DIALOGS_BUTTON")]
+    [ctx.getTitle("DIALOGS_BUTTON")],
+    [ctx.getTitle("SUBSCRIPTIONS_BUTTON")]
   );
 
   if (isAdmin) buttons.push([ctx.getTitle("BUTTON_BACK_ADMIN")]);
