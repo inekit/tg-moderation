@@ -9,8 +9,8 @@ const { stat } = require("fs");
 
 exports.filters_keyboard = (ctx, user_id) =>
   inlineKeyboard([
-    [urlButton("Сайт", "https:///92.255.79.59/all/" + user_id)],
-    //[webAppButton("Сайт", "https:///92.255.79.59/all/" + user_id)]
+    [urlButton("Сайт", "https://92.255.79.59/all/" + user_id)],
+    [webAppButton("Сайт", "https://92.255.79.59/all/" + user_id)],
   ]);
 
 exports.confirm_keyboard = (ctx) =>
