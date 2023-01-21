@@ -1,3 +1,5 @@
+const { now } = require("moment");
+
 var EntitySchema = require("typeorm").EntitySchema;
 
 module.exports = new EntitySchema({
@@ -56,10 +58,12 @@ module.exports = new EntitySchema({
     departure_date: {
       type: "date",
       nullable: "true",
+      default: Date.now(),
     },
     departure_date_back: {
       type: "date",
       nullable: "true",
+      default: Date.now(),
     },
     comment: {
       type: "varchar",
