@@ -530,7 +530,8 @@ async function sendToAdmin(ctx) {
 
   //console.log(ctx.wizard.state);
 
-  contacts = contacts ?? `@${ctx.from.username}`;
+  ctx.wizard.state.input.contacts = contacts =
+    contacts ?? `@${ctx.from.username}`;
 
   const connection = await tOrmCon;
 
