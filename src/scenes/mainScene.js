@@ -370,7 +370,6 @@ scene
 
       ctx.wizard.state.input.pic = await getPic(ctx.from.id);
 
-      await ctx.replyWithPhoto(ctx.scene.state.input.photos).catch((e) => {});
       ctx.replyWithKeyboard(getDeliveryHeader(ctx), "finish_delivery_keyboard");
       ctx.wizard.selectStep(ctx.wizard.cursor + 1);
 
@@ -382,7 +381,6 @@ scene
       ctx.wizard.state.input.comment = ctx.message.text;
       ctx.wizard.state.input.pic = await getPic(ctx.from.id);
 
-      await ctx.replyWithPhoto(ctx.scene.state.input.photos).catch((e) => {});
       ctx.replyWithKeyboard(getDeliveryHeader(ctx), "finish_delivery_keyboard");
       ctx.wizard.selectStep(ctx.wizard.cursor + 1);
 
@@ -520,10 +518,11 @@ async function sendToAdmin(ctx) {
 
   console.log(123, departure_date);
 
-  ctx.wizard.state.input.departure_date = departure_date = moment(
-    departure_date,
-    "DD.MM.YYYY"
-  ).toDate();
+  ctx.wizard.state.input.departure_date = departure_date =
+    what_need === "send"
+      ? undefined
+      : moment(departure_date, "DD.MM.YYYY").toDate();
+
   ctx.wizard.state.input.departure_date_back = departure_date_back =
     departure_date_back
       ? moment(departure_date_back, "DD.MM.YYYY").toDate()
