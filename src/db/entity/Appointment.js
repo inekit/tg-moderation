@@ -63,7 +63,7 @@ module.exports = new EntitySchema({
     departure_date_back: {
       type: "date",
       nullable: "true",
-      default: "now()",
+      //default: "now()",
     },
     comment: {
       type: "varchar",

@@ -4,9 +4,19 @@ module.exports = new EntitySchema({
   name: "Subscription",
   tableName: "subscriptions",
   columns: {
+    id: {
+      type: "bigint",
+      primary: true,
+      generated: true,
+    },
     client_id: {
       type: "bigint",
       primary: true,
+      nullable: false,
+    },
+    what_need: {
+      type: "enum",
+      enum: ["delivery", "send"],
       nullable: false,
     },
     send_from: {

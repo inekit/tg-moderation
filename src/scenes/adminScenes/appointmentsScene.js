@@ -10,7 +10,8 @@ const {
   handlers: { FilesHandler },
 } = require("telegraf-steps");
 require("dotenv").config();
-const urlButton = Markup.button.url;
+const { url: urlButton, callback: callbackButton } = Markup.button;
+
 const { inlineKeyboard } = Markup;
 const moment = require("moment");
 
@@ -428,44 +429,58 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
       departure_date_back,
     } = ctx.scene.state.appointment_data;
 
-    if (what_need === "delivery") {
-      const subscriptions = await queryRunner.query(
-        `select client_id from subscriptions where 
-        ( ( (send_from=$1) and (send_to=$2)
-            and (date_finish>=$3 or $3 is null) and (date_start<=$3 or $3 is null) )
-            or ( (send_from=$2) and (send_to=$1)
-            and (date_finish>=$4 or $4 is null) and (date_start<=$4 or $4 is null) ) )
-        group by client_id
-        `,
-        [send_from, send_to, departure_date, departure_date_back]
-      );
+    const subscriptions =
+      what_need === "delivery"
+        ? await queryRunner.query(
+            `select client_id from subscriptions where 
+            what_need = 'delivery' and
+            ( ( (send_from=$1) and (send_to=$2)
+                and (date_finish>=$3 or $3 is null) and (date_start<=$3 or $3 is null) )
+                or ( (send_from=$2) and (send_to=$1)
+                and (date_finish>=$4 or $4 is null) and (date_start<=$4 or $4 is null) ) )
+            group by client_id
+            `,
+            [send_from, send_to, departure_date, departure_date_back]
+          )
+        : await queryRunner.query(
+            `select client_id from subscriptions where 
+            what_need = 'send' 
+            and (send_from=$1) and (send_to=$2)
+            and ( ((date_start<=$3) and (date_finish>=$4))
+              or ((date_start>=$3) and (date_finish<=$4))
+              or ((date_start>=$3) and (date_start<=$4))
+              or ((date_finish>=$3) and (date_finish<=$4))
+              )
+            group by client_id
+           `,
+            [send_from, send_to, departure_date, departure_date_back]
+          );
 
-      console.log(subscriptions);
+    console.log(subscriptions);
 
-      const s_title = await require("../../Utils/titleFromDataObj")(
-        ctx.scene.state.lastWa,
-        "ENTER_FINISH_SUBSCRIPTION",
-        ctx
-      );
+    const s_title = await require("../../Utils/titleFromDataObj")(
+      ctx.scene.state.lastWa,
+      "ENTER_FINISH_PUBLIC",
+      ctx
+    );
 
-      for (s of subscriptions) {
-        console.log(s);
+    for (s of subscriptions) {
+      console.log(s);
 
-        await ctx.telegram
-          .sendMessage(s.client_id, s_title, {
-            reply_markup: {
-              inline_keyboard: [
-                [
-                  urlButton(
-                    ctx.getTitle("SEND_DIALOG_REQUEST"),
-                    `t.me/${ctx.botInfo.username}/?start=dialog-${ctx.match[1]}`
-                  ),
-                ],
+      await ctx.telegram
+        .sendMessage(s.client_id, s_title, {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                callbackButton(
+                  ctx.getTitle("SEND_DIALOG_REQUEST"),
+                  `softmain-dialog-${ctx.match[1]}`
+                ),
               ],
-            },
-          })
-          .catch(console.log);
-      }
+            ],
+          },
+        })
+        .catch(console.log);
     }
 
     await ctx.telegram //process.env.CHANNEL_ID

@@ -5,6 +5,7 @@ const {
 } = require("telegraf");
 const titles = require("telegraf-steps").titlesGetter(__dirname + "/Titles");
 const getUser = require("./Utils/getUser");
+const tOrmCon = require("./db/connection");
 
 const mainStage = new Stage(
   [
@@ -13,6 +14,8 @@ const mainStage = new Stage(
     require("./scenes/dialogSellerScene"),
     require("./scenes/userAppointmentsScene"),
     require("./scenes/searchResultScene"),
+    require("./scenes/subscriptionsScene"),
+    require("./scenes/searchScene"),
 
     require("./scenes/adminScenes/adminScene"),
     require("./scenes/adminScenes/adminsScene"),
@@ -39,12 +42,15 @@ mainStage.use(async (ctx, next) => {
 
 mainStage.start(async (ctx) => ctx.scene.enter("clientScene"));
 
-mainStage.action(/^(.+)\-(.+)\-(.+)\-(.+)/g, async (ctx) => {
+mainStage.action(/^(d|s)\-(.+)\-(.+)\-(.+)\-(.+)/g, async (ctx) => {
   await ctx.answerCbQuery().catch(console.log);
 
-  let [full_str, send_from, send_to, date_start, date_finish] = ctx.match;
+  let [full_str, what_need, send_from, send_to, date_start, date_finish] =
+    ctx.match;
 
   console.log(ctx.match);
+
+  what_need = what_need === "d" ? "delivery" : "send";
 
   send_from = send_from !== "undefined" ? send_from : null;
   send_to = send_to !== "undefined" ? send_to : null;
@@ -52,10 +58,37 @@ mainStage.action(/^(.+)\-(.+)\-(.+)\-(.+)/g, async (ctx) => {
   date_finish = date_finish !== "undefined" ? date_finish + "00" : null;
 
   ctx.scene.enter("searchResultScene", {
+    what_need,
     send_from,
     send_to,
     date_start,
     date_finish,
+  });
+});
+
+mainStage.action(/^softmain\-dialog\-([0-9]+)$/g, async (ctx) => {
+  const appointment_id = ctx.match[1];
+
+  const connection = await tOrmCon;
+
+  const opened_client = (
+    await connection
+      .query(
+        `select opened_client from dialogs where client_id = $1 and appointment_id = $2`,
+        [ctx.from.id, appointment_id]
+      )
+      .catch((e) => {})
+  )?.[0]?.opened_client;
+
+  console.log(1213, opened_client);
+
+  if (opened_client)
+    return await ctx.answerCbQuery("Диалог уже открыт").catch(console.log);
+  await ctx.answerCbQuery().catch(console.log);
+
+  ctx.scene.enter("dialogScene", {
+    appointment_id,
+    mode: "client",
   });
 });
 

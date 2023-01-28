@@ -33,13 +33,15 @@ class UsersService {
   }
 
   getFilteredAddr(
-    { user_id, send_from, send_to, date_start, date_finish },
+    { user_id, send_from, send_to, date_start, date_finish, what_need },
     ctx
   ) {
     return new Promise(async (res, rej) => {
       console.log(date_start, date_finish);
 
-      const dataStr = `${send_from}-${send_to}-${new Date(date_start)
+      const dataStr = `${
+        what_need === "delivery" ? "d" : "s"
+      }-${send_from}-${send_to}-${new Date(date_start)
         ?.getTime()
         ?.toString()
         ?.substr(0, 8)}-${new Date(date_finish)

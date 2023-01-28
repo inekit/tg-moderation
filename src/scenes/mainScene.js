@@ -50,8 +50,6 @@ const scene = new CustomWizardScene("clientScene").enter(async (ctx) => {
       ctx.startPayload
     );
 
-  console.log(1234);
-
   if (filters) {
     const [send_from, send_to, date_start, date_finish] = filters;
 
@@ -86,6 +84,7 @@ const scene = new CustomWizardScene("clientScene").enter(async (ctx) => {
 });
 
 scene.hears(titles.getValues("NEW_APPOINTMENT_BUTTON"), async (ctx) => {
+  ctx.scene.state.input = {};
   ctx.replyStepByVariable("name");
 });
 scene.hears(titles.getValues("APPOINTMENTS_BUTTON"), async (ctx) => {
@@ -94,10 +93,7 @@ scene.hears(titles.getValues("APPOINTMENTS_BUTTON"), async (ctx) => {
 scene.hears(titles.getValues("DIALOGS_BUTTON"), async (ctx) => getDialogs(ctx));
 
 scene.hears(titles.getValues("SUBSCRIPTIONS_BUTTON"), async (ctx) => {
-  ctx.replyWithKeyboard("CHOOSE_FILTERS_TITLE", {
-    name: "filters_keyboard",
-    args: [ctx.from.id],
-  });
+  ctx.scene.enter("searchScene");
 });
 
 async function getDialogs(ctx) {
@@ -225,13 +221,13 @@ scene
       ctx.scene.state.input.send_to = ctx.match[0];
 
       if (ctx.scene.state.input.what_need === "send")
-        return ctx.replyStepByVariable("description");
+        return ctx.replyStepByVariable("date_from");
 
       return ctx.replyStepByVariable("departure_date");
     },
   })
   .addStep({
-    variable: "send_from_input",
+    variable: "send_to_input",
     cb: (ctx) => {
       ctx.scene.state.input.send_to = ctx.message.text;
 
@@ -239,6 +235,39 @@ scene
         return ctx.replyNextStep();
 
       return ctx.replyStepByVariable("departure_date");
+    },
+  })
+  .addStep({
+    variable: "date_from",
+    skipTo: "description",
+    skipText: "Готов сейчас",
+    cb: (ctx) => {
+      const text = ctx.message.text;
+      const date = moment(text, "DD.MM.YYYY");
+      if (date.isValid() && date.add(1, "days") >= moment(new Date())) {
+        ctx.scene.state.input.departure_date = text;
+        ctx.replyNextStep();
+      } else if (date.isValid()) ctx.replyWithTitle("REENTER_DATE_FROM");
+      else ctx.replyWithTitle("REENTER_DATE_FROM");
+    },
+  })
+  .addStep({
+    variable: "date_to",
+    cb: (ctx) => {
+      const text = ctx.message.text;
+      const date = moment(text, "DD.MM.YYYY");
+      console.log(
+        date,
+        moment(ctx.scene.state.input.departure_date, "DD.MM.YYYY")
+      );
+      if (
+        date.isValid() &&
+        date >= moment(ctx.scene.state.input.departure_date, "DD.MM.YYYY")
+      ) {
+        ctx.scene.state.input.departure_date_back = text;
+        ctx.replyNextStep();
+      } else if (date.isValid()) ctx.replyWithTitle("REENTER_DATE_TO");
+      else ctx.replyWithTitle("REENTER_DATE_TO");
     },
   })
   .addStep({
@@ -516,17 +545,23 @@ async function sendToAdmin(ctx) {
     description,
   } = ctx.wizard.state.input;
 
-  console.log(123, departure_date);
+  console.log(123, departure_date, departure_date_back);
 
   ctx.wizard.state.input.departure_date = departure_date =
     what_need === "send"
-      ? undefined
+      ? departure_date
+        ? moment(departure_date, "DD.MM.YYYY").toDate()
+        : new Date()
       : moment(departure_date, "DD.MM.YYYY").toDate();
 
   ctx.wizard.state.input.departure_date_back = departure_date_back =
-    departure_date_back
+    what_need === "send"
+      ? departure_date_back
+        ? moment(departure_date_back, "DD.MM.YYYY").toDate()
+        : moment(new Date()).add(60, "days")
+      : departure_date_back !== undefined
       ? moment(departure_date_back, "DD.MM.YYYY").toDate()
-      : departure_date_back;
+      : undefined;
 
   //console.log(ctx.wizard.state);
 
@@ -577,6 +612,7 @@ async function sendToAdmin(ctx) {
 scene.action("new_appointment", async (ctx) => {
   await ctx.answerCbQuery().catch((e) => {});
   //ctx.scene.enter("clientScene", { visual: false });
+  ctx.scene.state.input = {};
   ctx.replyStepByVariable("name");
 });
 

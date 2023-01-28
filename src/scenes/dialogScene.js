@@ -10,7 +10,13 @@ const getUser = require("../Utils/getUser");
 const sendToOpposite = require("../Utils/sendToOpposite");
 
 const scene = new CustomWizardScene("dialogScene").enter(async (ctx) => {
-  const { visual = true, appointment_id, mode, from_dialogs } = ctx.scene.state;
+  const {
+    visual = true,
+    appointment_id,
+    mode,
+    from_dialogs,
+    searchResultParams,
+  } = ctx.scene.state;
 
   const connection = await tOrmCon;
 
@@ -160,6 +166,7 @@ scene.hears(titles.getValues("BUTTON_BACK"), async (ctx) => {
     seller_id,
     seller_username,
     appointment_id,
+    searchResultParams,
   } = ctx.scene.state;
 
   for (id of messages_ids) {
@@ -201,6 +208,11 @@ scene.hears(titles.getValues("BUTTON_BACK"), async (ctx) => {
     `@${ctx.from.username} (№${appointment_id}) покинул диалог`
   );
 
+  if (searchResultParams)
+    return ctx.scene.enter("searchResultScene", {
+      edit: false,
+      ...searchResultParams,
+    });
   ctx.scene.enter("clientScene", { from_dialogs });
 });
 
