@@ -13,7 +13,7 @@ exports.filters_keyboard = (ctx, user_id, hasSubscriptions) => {
       urlButton("Поиск курьера", "https://92.255.79.59/delivery/" + user_id), //"https://92.255.79.59/delivery/"
       urlButton(
         "Поиск посылки",
-        "https://92.255.79.59/delivery/" + user_id //"http://192.168.0.105:3040/package/"
+        "https://92.255.79.59/deliverer/" + user_id //"http://192.168.0.105:3040/package/"
       ),
     ],
   ]);
