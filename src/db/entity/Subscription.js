@@ -18,7 +18,6 @@ module.exports = new EntitySchema({
       type: "enum",
       enum: ["delivery", "send"],
       nullable: false,
-      default: "delivery",
     },
     send_from: {
       type: "varchar",
