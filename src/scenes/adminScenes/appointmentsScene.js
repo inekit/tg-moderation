@@ -399,7 +399,7 @@ scene.action(/^code\-([0-9]+)$/g, async (ctx) => {
     ctx.scene.state.lastWa,
     "ENTER_FINISH_ADMIN",
     ctx,
-    "CHOOSE_FROM_COUNTRY"
+    "CHOOSE_TO_COUNTRY"
   );
 
   ctx.editMenu(title, {
