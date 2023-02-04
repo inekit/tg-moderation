@@ -378,7 +378,15 @@ scene.action("reload", async (ctx) => {
 
 scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
   ctx.wizard.state.appointment_id = ctx.match[1];
-  ctx.editMenu("CHOOSE_FROM_COUNTRY", {
+
+  const title = await require("../../Utils/titleFromDataObj")(
+    ctx.scene.state.lastWa,
+    "ENTER_FINISH_ADMIN",
+    ctx,
+    "CHOOSE_FROM_COUNTRY"
+  );
+
+  ctx.editMenu(title, {
     name: "countries_list_keyboard",
     args: [false],
   });
@@ -387,7 +395,14 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
 scene.action(/^code\-([0-9]+)$/g, async (ctx) => {
   ctx.wizard.state.threadFromId = ctx.match[1];
 
-  ctx.editMenu("CHOOSE_TO_COUNTRY", {
+  const title = await require("../../Utils/titleFromDataObj")(
+    ctx.scene.state.lastWa,
+    "ENTER_FINISH_ADMIN",
+    ctx,
+    "CHOOSE_FROM_COUNTRY"
+  );
+
+  ctx.editMenu(title, {
     name: "countries_list_keyboard",
     args: [true],
   });

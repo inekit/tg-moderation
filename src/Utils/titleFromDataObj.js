@@ -1,6 +1,6 @@
 const tOrmCon = require("../db/connection");
 const moment = require("moment");
-module.exports = async (dataObj = {}, title, ctx) => {
+module.exports = async (dataObj = {}, title, ctx, additionalTitle) => {
   let {
     id,
     appointment_id,
@@ -73,7 +73,7 @@ module.exports = async (dataObj = {}, title, ctx) => {
             description,
             contacts,
             comment ? `\n${comment}` : " ",
-          ])
+          ]) + (ctx.getTitle(additionalTitle) ?? "")
         : ctx.getTitle("ENTER_FINISH_DELIVERY_ADMIN", [
             appointment_id,
             pic,
@@ -85,7 +85,7 @@ module.exports = async (dataObj = {}, title, ctx) => {
             departure_date_back ? ` 🛬 ${departure_date_back}` : " ",
             contacts,
             comment ? `\n5) ${comment}` : " ",
-          ]);
+          ]) + (ctx.getTitle(additionalTitle) ?? "");
   else if (title === "ENTER_FINISH_PUBLIC")
     titleSrt =
       what_need === "send"
