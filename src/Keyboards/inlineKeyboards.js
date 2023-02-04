@@ -37,6 +37,48 @@ exports.search_item_keyboard = (ctx, appointment_id) =>
     [callbackButton(ctx.getTitle("BUTTON_GO_BACK"), "go_back")],
   ]);
 
+exports.countries_list_keyboard = (ctx, isBack) => {
+  const countriesCodes = {
+    ОАЭ: "29",
+    Россия: "28",
+    Турция: "31",
+    Черногория: "32",
+    США: "33",
+    Таиланд: "34",
+    Казахстан: "35",
+    Грузия: "36",
+    Узбекистан: "37",
+    Израиль: "38",
+    Германия: "39",
+    Италия: "40",
+    Армения: "41",
+    "Южная Корея": "42",
+    "Шри-Ланка": "43",
+    Латвия: "44",
+    Вьетнам: "45",
+    Кыргызстан: "46",
+    Сербия: "47",
+    Аргентина: "48",
+    Индия: "49",
+    Индонезия: "50",
+    Великобритания: "51",
+    Кипр: "52",
+    Испания: "53",
+    Абхазия: "54",
+    Монголия: "55",
+    Другая: "1",
+  };
+
+  const keyboard = inlineKeyboard(
+    Object.entries(countriesCodes).map(([country, code]) =>
+      callbackButton(country, (!isBack ? "code-" : "backcode-") + code)
+    ),
+    { columns: 2 }
+  );
+
+  return keyboard;
+};
+
 exports.confirm_keyboard = (ctx) =>
   inlineKeyboard([callbackButton(ctx.getTitle("BUTTON_CONFIRM"), "confirm")]);
 

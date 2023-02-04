@@ -377,7 +377,30 @@ scene.action("reload", async (ctx) => {
 });
 
 scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
+  ctx.wizard.state.appointment_id = ctx.match[1];
+  ctx.editMenu("CHOOSE_FROM_COUNTRY", {
+    name: "countries_list_keyboard",
+    args: [false],
+  });
+});
+
+scene.action(/^code\-([0-9]+)$/g, async (ctx) => {
+  ctx.wizard.state.threadFromId = ctx.match[1];
+
+  ctx.editMenu("CHOOSE_TO_COUNTRY", {
+    name: "countries_list_keyboard",
+    args: [true],
+  });
+});
+
+scene.action(/^backcode\-([0-9]+)$/g, async (ctx) => {
   await ctx.answerCbQuery().catch(console.log);
+
+  const threadFromId = ctx.wizard.state.threadFromId;
+
+  const threadToId = ctx.match[1];
+
+  const appointment_id = ctx.wizard.state.appointment_id;
 
   const connection = await tOrmCon;
 
@@ -390,7 +413,7 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
   try {
     const res = await queryRunner.query(
       "update appointments set status = 'aprooved' where id = $1 returning *",
-      [ctx.match[1]]
+      [appointment_id]
     );
 
     const { customer_id } = (ctx.scene.state.appointment_data = res[0]?.[0]);
@@ -474,7 +497,7 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
               [
                 callbackButton(
                   ctx.getTitle("SEND_DIALOG_REQUEST"),
-                  `softmain-dialog-${ctx.match[1]}`
+                  `softmain-dialog-${appointment_id}`
                 ),
               ],
             ],
@@ -484,24 +507,40 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
     }
 
     await ctx.telegram //process.env.CHANNEL_ID
-      .sendMessage(ctx.from.id, title, {
+      .sendMessage(process.env.CHANNEL_ID, title, {
+        message_thread_id: threadFromId,
         reply_markup: {
           inline_keyboard: [
             [
               urlButton(
                 ctx.getTitle("SEND_DIALOG_REQUEST"),
-                `t.me/${ctx.botInfo.username}/?start=dialog-${ctx.match[1]}`
+                `t.me/${ctx.botInfo.username}/?start=dialog-${appointment_id}`
               ),
             ],
           ],
         },
-      })
-      .catch(console.log);
+      });
+
+    if (threadToId != threadFromId)
+      await ctx.telegram //process.env.CHANNEL_ID
+        .sendMessage(process.env.CHANNEL_ID, title, {
+          message_thread_id: threadToId,
+          reply_markup: {
+            inline_keyboard: [
+              [
+                urlButton(
+                  ctx.getTitle("SEND_DIALOG_REQUEST"),
+                  `t.me/${ctx.botInfo.username}/?start=dialog-${appointment_id}`
+                ),
+              ],
+            ],
+          },
+        });
 
     await ctx.telegram
       .sendMessage(
         customer_id,
-        ctx.getTitle("APPOINTMENT_APROOVED", [ctx.match[1]])
+        ctx.getTitle("APPOINTMENT_APROOVED", [appointment_id])
       )
       .catch((e) => {});
 

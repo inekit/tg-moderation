@@ -21,6 +21,7 @@ console.log("started");
 
 (async () => {
   bot.use(telegraf.session(), require("./stages"));
+  //bot.on("message", (ctx) => console.log(ctx));
 
   server(ctx);
 
