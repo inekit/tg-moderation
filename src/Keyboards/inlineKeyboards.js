@@ -37,56 +37,23 @@ exports.search_item_keyboard = (ctx, appointment_id) =>
     [callbackButton(ctx.getTitle("BUTTON_GO_BACK"), "go_back")],
   ]);
 
+exports.edit_countries_keyboard = (ctx, appointment_id) =>
+  inlineKeyboard([
+    [callbackButton(ctx.getTitle("PUBLISH_BUTTON"), `publish`)],
+
+    [
+      callbackButton(ctx.getTitle("EDIT_FROM_BUTTON"), `editfrom`),
+      callbackButton(ctx.getTitle("EDIT_TO_BUTTON"), `editto`),
+    ],
+  ]);
+
 exports.countries_list_keyboard = (ctx, isBack) => {
   const sortObject = (o) =>
     Object.keys(o)
       .sort()
       .reduce((r, k) => ((r[k] = o[k]), r), {});
 
-  const countriesCodes = sortObject({
-    ОАЭ: "29",
-    Россия: "28",
-    Турция: "31",
-    Черногория: "32",
-    США: "33",
-    Таиланд: "34",
-    Казахстан: "35",
-    Грузия: "36",
-    Узбекистан: "37",
-    Израиль: "38",
-    Германия: "39",
-    Италия: "40",
-    Армения: "41",
-    "Южная Корея": "42",
-    "Шри-Ланка": "43",
-    Латвия: "44",
-    Вьетнам: "45",
-    Кыргызстан: "46",
-    Сербия: "47",
-    Аргентина: "48",
-    Индия: "49",
-    Индонезия: "50",
-    Великобритания: "51",
-    Кипр: "52",
-    Испания: "53",
-    Абхазия: "54",
-    Монголия: "55",
-    Другая: "1",
-
-    Азербайджан: "81",
-    Бразилия: "84",
-    Венгрия: "85",
-    Греция: "86",
-    Египет: "87",
-    Ирландия: "89",
-    Молдова: "90",
-    "Северный Кипр": "91",
-    "Сейшельские острова": "92",
-    Финляндия: "93",
-    Франция: "94",
-    Эстония: "95",
-    Япония: "96",
-  });
+  const countriesCodes = sortObject(require("../Utils/getCountryLink"));
 
   const keyboard = inlineKeyboard(
     Object.entries(countriesCodes).map(([country, code]) =>

@@ -377,8 +377,30 @@ scene.action("reload", async (ctx) => {
 });
 
 scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
+  await ctx.answerCbQuery().catch(console.log);
+
   ctx.wizard.state.appointment_id = ctx.match[1];
 
+  showFromMenu(ctx);
+});
+
+scene.action("editfrom", async (ctx) => {
+  await ctx.answerCbQuery().catch(console.log);
+
+  ctx.wizard.state.editing = true;
+
+  showFromMenu(ctx);
+});
+
+scene.action("editto", async (ctx) => {
+  await ctx.answerCbQuery().catch(console.log);
+
+  ctx.wizard.state.editing = true;
+
+  showToMenu(ctx);
+});
+
+async function showFromMenu(ctx) {
   const title = await require("../../Utils/titleFromDataObj")(
     ctx.scene.state.lastWa,
     "ENTER_FINISH_ADMIN",
@@ -390,11 +412,19 @@ scene.action(/^aproove\-([0-9]+)$/g, async (ctx) => {
     name: "countries_list_keyboard",
     args: [false],
   });
-});
+}
 
 scene.action(/^code\-([0-9]+)$/g, async (ctx) => {
+  await ctx.answerCbQuery().catch(console.log);
+
   ctx.wizard.state.threadFromId = ctx.match[1];
 
+  if (ctx.wizard.state.editing) return showSubmitMenu(ctx);
+
+  showToMenu(ctx);
+});
+
+async function showToMenu(ctx) {
   const title = await require("../../Utils/titleFromDataObj")(
     ctx.scene.state.lastWa,
     "ENTER_FINISH_ADMIN",
@@ -406,14 +436,50 @@ scene.action(/^code\-([0-9]+)$/g, async (ctx) => {
     name: "countries_list_keyboard",
     args: [true],
   });
-});
+}
+
+async function showSubmitMenu(ctx) {
+  const threadFromId = ctx.wizard.state.threadFromId;
+  const threadToId = ctx.wizard.state.threadToId;
+
+  const countriesCodesEntries = Object.entries(
+    require("../../Utils/getCountryLink")
+  );
+
+  const threadFromName = countriesCodesEntries.find(([key, value]) => {
+    if (value == threadFromId) return true;
+  })?.[0];
+  const threadToName = countriesCodesEntries.find(([key, value]) => {
+    if (value == threadToId) return true;
+  })?.[0];
+
+  const title = await require("../../Utils/titleFromDataObj")(
+    ctx.scene.state.lastWa,
+    "ENTER_FINISH_ADMIN",
+    ctx,
+    ctx.getTitle("SEND_TO_CHATS", [threadFromName, threadToName])
+  );
+
+  ctx.replyWithKeyboard(title, {
+    name: "edit_countries_keyboard",
+    args: [true],
+  });
+}
 
 scene.action(/^backcode\-([0-9]+)$/g, async (ctx) => {
   await ctx.answerCbQuery().catch(console.log);
 
+  ctx.wizard.state.threadToId = ctx.match[1];
+
+  showSubmitMenu(ctx);
+});
+
+scene.action("publish", async (ctx) => {
+  await ctx.answerCbQuery().catch(console.log);
+
   const threadFromId = ctx.wizard.state.threadFromId;
 
-  const threadToId = ctx.match[1];
+  const threadToId = ctx.wizard.state.threadToId;
 
   const appointment_id = ctx.wizard.state.appointment_id;
 
