@@ -38,7 +38,12 @@ exports.search_item_keyboard = (ctx, appointment_id) =>
   ]);
 
 exports.countries_list_keyboard = (ctx, isBack) => {
-  const countriesCodes = {
+  const sortObject = (o) =>
+    Object.keys(o)
+      .sort()
+      .reduce((r, k) => ((r[k] = o[k]), r), {});
+
+  const countriesCodes = sortObject({
     ОАЭ: "29",
     Россия: "28",
     Турция: "31",
@@ -67,7 +72,21 @@ exports.countries_list_keyboard = (ctx, isBack) => {
     Абхазия: "54",
     Монголия: "55",
     Другая: "1",
-  };
+
+    Азербайджан: "81",
+    Бразилия: "84",
+    Венгрия: "85",
+    Греция: "86",
+    Египет: "87",
+    Ирландия: "89",
+    Молдова: "90",
+    "Северный Кипр": "91",
+    "Сейшельские острова": "92",
+    Финляндия: "93",
+    Франция: "94",
+    Эстония: "95",
+    Япония: "96",
+  });
 
   const keyboard = inlineKeyboard(
     Object.entries(countriesCodes).map(([country, code]) =>
