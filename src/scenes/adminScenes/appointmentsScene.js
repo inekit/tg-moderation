@@ -460,7 +460,7 @@ async function showSubmitMenu(ctx) {
     ctx.getTitle("SEND_TO_CHATS", [threadFromName, threadToName])
   );
 
-  ctx.replyWithKeyboard(title, {
+  ctx.editMenu(title, {
     name: "edit_countries_keyboard",
     args: [true],
   });
