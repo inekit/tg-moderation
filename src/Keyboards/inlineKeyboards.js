@@ -7,6 +7,31 @@ const { inlineKeyboard } = Markup;
 const moment = require("moment");
 const { stat } = require("fs");
 
+exports.close_ticket_keyboard = (ctx, ticket_id) =>
+  inlineKeyboard([
+    [
+      callbackButton(
+        ctx.getTitle("CLOSE_TICKET_BUTTON"),
+        `close_ticket_${ticket_id}`
+      ),
+    ],
+  ]);
+
+exports.choose_lang_keyboard = (ctx) =>
+  inlineKeyboard([
+    [callbackButton(ctx.getTitle("LANG_EN"), `language_en`)],
+    [callbackButton(ctx.getTitle("LANG_RU"), `language_ru`)],
+  ]);
+
+exports.instructions_keyboard = (ctx) =>
+  inlineKeyboard([
+    [callbackButton(ctx.getTitle("HELP_BUTTON"), `help`)],
+    [callbackButton(ctx.getTitle("HELP2_BUTTON"), `help2`)],
+  ]);
+
+exports.start_keyboard = (ctx) =>
+  inlineKeyboard([[callbackButton(ctx.getTitle("START"), `start`)]]);
+
 exports.filters_keyboard = (ctx, user_id, hasSubscriptions) => {
   const k = inlineKeyboard([
     [
@@ -155,8 +180,8 @@ exports.search_u_list_keyboard = (ctx, data, offset) => {
 
 exports.search_a_list_keyboard = (ctx, data, offset) => {
   const keyboard = inlineKeyboard(
-    data.map(({ appointment_id, id }) =>
-      callbackButton("Заявка №" + appointment_id, "dialog1-" + id)
+    data.map(({ id, username }) =>
+      callbackButton(`Тикет №${id} ${username}`, "dialog1-" + id)
     ),
     { columns: 1 }
   );
@@ -171,9 +196,10 @@ exports.search_a_list_keyboard = (ctx, data, offset) => {
       )
     );
 
-  b.push(
-    callbackButton(ctx.getTitle("BUTTON_NEXT"), `get_a_${Number(offset) + 1}`)
-  );
+  if (data.length >= 10)
+    b.push(
+      callbackButton(ctx.getTitle("BUTTON_NEXT"), `get_a_${Number(offset) + 1}`)
+    );
 
   keyboard.reply_markup.inline_keyboard.push(b);
 
@@ -546,6 +572,34 @@ exports.admins_list_keyboard = (ctx, admins) => {
     admins.map(({ user_id }) => callbackButton(user_id, "admin-" + user_id)),
     { columns: 2 }
   );
+
+  return keyboard;
+};
+
+exports.users_list_keyboard = (ctx, admins, offset) => {
+  const keyboard = inlineKeyboard(
+    admins.map(({ id, username }) =>
+      callbackButton(username ?? id, "admin-" + id)
+    ),
+    { columns: 2 }
+  );
+
+  const b = [];
+
+  if (offset > 0)
+    b.push(
+      callbackButton(
+        ctx.getTitle("BUTTON_PREVIOUS"),
+        `get_a_${Number(offset) - 1}`
+      )
+    );
+
+  if (admins.length >= 10)
+    b.push(
+      callbackButton(ctx.getTitle("BUTTON_NEXT"), `get_a_${Number(offset) + 1}`)
+    );
+
+  keyboard.reply_markup.inline_keyboard.push(b);
 
   return keyboard;
 };

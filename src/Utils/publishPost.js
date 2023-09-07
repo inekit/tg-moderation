@@ -55,7 +55,7 @@ module.exports = async (id, ctx) => {
   );
 
   await ctx.telegram //process.env.CHANNEL_ID
-    .sendMessage(process.env.CHANNEL_ID, title, {
+    .sendMessage(ctx.from.id, title, {
       reply_markup: {
         inline_keyboard: [
           [

@@ -18,14 +18,5 @@ module.exports = new EntitySchema({
       default: false,
     },
   },
-  relations: {
-    user: {
-      target: "User",
-      type: "one-to-one",
-      cascade: true,
-      joinColumn: true,
-      onDelete: "cascade",
-      onUpdate: "cascade",
-    },
-  },
+  relations: {},
 });
