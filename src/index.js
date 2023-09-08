@@ -16,7 +16,8 @@ cron.schedule("*/1 * * * *", async () => {
     .query(
       `delete from white_list where DATE_PART('day', now() - creation_date)::int >=30`
     )
-    .catch(console.log);
+    .catch(console.log)
+    .then((r) => console.log(1));
 });
 
 const { bot, ctx, titles } = new Engine(
