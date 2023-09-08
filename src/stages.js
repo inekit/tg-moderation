@@ -63,7 +63,7 @@ chatStage.on("message", async (ctx) => {
   const user_id = ctx.from.id;
   const chat_id = ctx.chat.id;
 
-  console.log(12);
+  console.log(await ctx.botInfo());
 
   const botInfo = await ctx.getChatMember(1971558222);
   console.log(botInfo);
