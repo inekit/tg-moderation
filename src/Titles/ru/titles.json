@@ -22,5 +22,6 @@
   "SELECT_USER_TO_DELETE": "Выберите пользователя, чтобы удалить из вайтлиста",
   "CONFIRM_DELETE": "Подтвердите удаление",
   "BUTTON_NEXT": "▶️",
-  "BUTTON_PREVIOUS": "◀️"
+  "BUTTON_PREVIOUS": "◀️",
+  "YOU_ARE_NOT_ADMIN": "У вас нет прав администратора"
 }

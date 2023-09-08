@@ -30,20 +30,21 @@ mainStage.start(async (ctx) => {
   ctx.scene.enter("adminScene");
 });
 
-const adminStage = new Stage([
-  //require("./scenes/adminScenes/adminScene"),
-  // require("./scenes/adminScenes/adminsScene"),
-  //require("./scenes/adminScenes/adsLinkScene"),
-  //require("./scenes/adminScenes/claimsScene"),
-  //require("./scenes/adminScenes/confirmCertificate"),
-]);
+mainStage.use(async (ctx, next) => {
+  const adminScenesNames = ["adminScene", "adminsScene", "whiteListScene"];
 
-mainStage.action(/^ticket\-([0-9]+)$/g, async (ctx) => {
-  ctx.answerCbQuery().catch(console.log);
+  if (
+    (adminScenesNames.includes(ctx.session?.__scenes.current) ||
+      ctx.message?.text === ctx.getTitle("BUTTON_BACK_ADMIN")) &&
+    !(await getUser(ctx))?.user_id &&
+    ctx.message?.text !== "/start"
+  ) {
+    if (ctx.callbackQuery) await ctx.answerCbQuery().catch((e) => {});
 
-  ctx.scene.enter("dialogAdminScene", {
-    ticket_id: ctx.match[1],
-  });
+    return ctx.replyWithTitle("YOU_ARE_NOT_ADMIN");
+  }
+
+  return await next();
 });
 
 mainStage.hears(titles.getValues("BUTTON_BACK_ADMIN"), (ctx) => {
@@ -51,11 +52,8 @@ mainStage.hears(titles.getValues("BUTTON_BACK_ADMIN"), (ctx) => {
   ctx.scene.enter("adminScene");
 });
 
-adminStage.hears(
-  titles.getValues("BUTTON_ADMIN_MENU"),
-  (ctx) =>
-    store.isAdmin(ctx?.from?.id) &&
-    ctx.scene.enter("adminScene", { edit: true })
+mainStage.hears(titles.getValues("BUTTON_ADMIN_MENU"), (ctx) =>
+  ctx.scene.enter("adminScene", { edit: true })
 );
 
 const chatStage = new Stage([]);
@@ -72,51 +70,65 @@ chatStage.on("message", async (ctx) => {
     return;
 
   const connection = await tOrmCon;
+  const queryRunner = connection.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
 
-  const userInfo = (
-    await connection
-      .query(
+  try {
+    const userInfo = (
+      await connection.query(
         `select *, DATE_PART('hour', now() - last_message_datetime)::int hours_ago from white_list wl
-    left join chat_abilities ca on ca.user_id = wl.id
-    where wl.id = $1 and (ca.chat_id = $2 or ca.chat_id is null) limit 1`,
+      left join chat_abilities ca on ca.user_id = wl.id
+      where wl.id = $1 and (ca.chat_id = $2 or ca.chat_id is null) limit 1`,
         [user_id, chat_id]
       )
-      .catch(console.log)
-  )?.[0];
+    )?.[0];
 
-  let alert_id;
-  if (!userInfo) {
-    await ctx.deleteMessage(ctx.message.message_id).catch(console.log);
-    alert_id = (await ctx.replyWithTitle("CONNECT_TO_ADMIN"))?.message_id;
-  } else {
-    if (userInfo?.hours_ago !== null && userInfo?.hours_ago < 8) {
+    let alert_id;
+    if (!userInfo) {
       await ctx.deleteMessage(ctx.message.message_id).catch(console.log);
-      alert_id = (
-        await ctx.replyWithTitle("TOO_FAST_MESSAGING", [8 - userInfo.hours_ago])
-      )?.message_id;
-    } else
-      await connection
-        .query(
+      alert_id = (await ctx.replyWithTitle("CONNECT_TO_ADMIN"))?.message_id;
+    } else {
+      if (userInfo?.hours_ago !== null && userInfo?.hours_ago < 8) {
+        await ctx.deleteMessage(ctx.message.message_id).catch(console.log);
+        alert_id = (
+          await ctx.replyWithTitle("TOO_FAST_MESSAGING", [
+            8 - userInfo.hours_ago,
+          ])
+        )?.message_id;
+      } else
+        await connection.query(
           `INSERT INTO chat_abilities (user_id, chat_id, last_message_datetime)
-      VALUES($1,$2,now()) 
-      ON CONFLICT (user_id, chat_id) 
-      DO 
-         UPDATE SET last_message_datetime = now()`,
+        VALUES($1,$2,now()) 
+        ON CONFLICT (user_id, chat_id) 
+        DO 
+           UPDATE SET last_message_datetime = now()`,
           [user_id, chat_id]
-        )
-        .catch(console.log);
-  }
+        );
 
-  alert_id &&
-    setTimeout(() => {
-      ctx.deleteMessage(alert_id).catch(console.log);
-    }, 10000);
+      await connection.query(
+        `update white_list set username = $1 where id=$2`,
+        [ctx.from.username, user_id]
+      );
+    }
+
+    alert_id &&
+      setTimeout(() => {
+        ctx.deleteMessage(alert_id).catch(console.log);
+      }, 10000);
+
+    await queryRunner.commitTransaction();
+  } catch (err) {
+    await queryRunner.rollbackTransaction();
+    console.log(err);
+  } finally {
+    await queryRunner.release();
+  }
 });
 
 const stages = new Composer();
 
 stages.use(Telegraf.chatType("private", mainStage.middleware()));
-stages.use(Telegraf.chatType("private", adminStage.middleware()));
 stages.use(Telegraf.chatType(["group", "supergroup"], chatStage.middleware()));
 
 module.exports = stages;
