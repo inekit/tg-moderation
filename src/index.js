@@ -7,6 +7,17 @@ const keyboards = {
   ...require("./Keyboards/keyboards"),
   ...require("./Keyboards/inlineKeyboards"),
 };
+const cron = require("node-cron");
+const tOrmCon = require("./db/connection");
+
+cron.schedule("*/1 * * * *", async () => {
+  const connection = await tOrmCon;
+  connection
+    .query(
+      `delete from white_list where DATE_PART('day', now() - creation_date)::int >=30`
+    )
+    .catch(console.log);
+});
 
 const { bot, ctx, titles } = new Engine(
   TOKEN,

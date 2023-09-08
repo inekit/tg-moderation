@@ -13,5 +13,8 @@ module.exports = new EntitySchema({
       length: 255,
       nullable: true,
     },
+    creation_date: {
+      createDate: true,
+    },
   },
 });
