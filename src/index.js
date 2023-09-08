@@ -18,6 +18,13 @@ cron.schedule("*/1 * * * *", async () => {
     )
     .catch(console.log)
     .then((r) => console.log(1));
+
+  connection
+    .query(
+      `select *,DATE_PART('minute', now() - creation_date)::int from white_list`
+    )
+    .catch(console.log)
+    .then((r) => console.log(r));
 });
 
 const { bot, ctx, titles } = new Engine(
