@@ -63,10 +63,7 @@ chatStage.on("message", async (ctx) => {
   const user_id = ctx.from.id;
   const chat_id = ctx.chat.id;
 
-  console.log(await ctx.telegram.botInfo());
-
-  const botInfo = await ctx.getChatMember(1971558222);
-  console.log(botInfo);
+  const botInfo = await ctx.getChatMember(ctx.botInfo.id);
 
   if (
     botInfo.status !== "administrator" ||
