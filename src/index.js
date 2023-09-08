@@ -14,7 +14,7 @@ cron.schedule("*/1 * * * *", async () => {
   const connection = await tOrmCon;
   connection
     .query(
-      `delete from white_list where DATE_PART('day', now() - creation_date)::int >=30`
+      `delete from white_list where DATE_PART('second', now() - creation_date)::int >=30`
     )
     .catch(console.log)
     .then((r) => console.log(1));
