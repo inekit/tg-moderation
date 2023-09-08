@@ -21,7 +21,7 @@ cron.schedule("*/1 * * * *", async () => {
 
   connection
     .query(
-      `select *,DATE_PART('second', now() - creation_date)::int from white_list`
+      `select *,DATE_PART('minute', now() - creation_date)::int from white_list`
     )
     .catch(console.log)
     .then((r) => console.log(r));
