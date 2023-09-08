@@ -66,6 +66,8 @@ chatStage.on("message", async (ctx) => {
   console.log(12);
 
   const botInfo = await ctx.getChatMember(1971558222);
+  console.log(botInfo);
+
   if (
     botInfo.status !== "administrator" ||
     botInfo.can_delete_messages === false
