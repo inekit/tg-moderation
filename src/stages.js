@@ -63,6 +63,8 @@ chatStage.on("message", async (ctx) => {
   const user_id = ctx.from.id;
   const chat_id = ctx.chat.id;
 
+  console.log(12);
+
   const botInfo = await ctx.getChatMember(1971558222);
   if (
     botInfo.status !== "administrator" ||
