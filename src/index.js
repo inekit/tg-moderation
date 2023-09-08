@@ -10,11 +10,11 @@ const keyboards = {
 const cron = require("node-cron");
 const tOrmCon = require("./db/connection");
 
-cron.schedule("0 0 * * *", async () => {
+cron.schedule("*/1 * * * *", async () => {
   const connection = await tOrmCon;
   connection
     .query(
-      `delete from white_list where DATE_PART('day', now() - creation_date)::int >=30`
+      `delete from white_list where DATE_PART('second', now() - creation_date)::int >=30`
     )
     .catch(console.log)
     .then((r) => console.log(1));
