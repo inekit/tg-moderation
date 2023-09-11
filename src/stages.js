@@ -78,6 +78,14 @@ chatStage.on("message", async (ctx) => {
 
   console.log(Date.now().toLocaleString(), ctx.message.message_id);
   try {
+    const wlInfo = (
+      await connection.query(
+        `select * from white_list wl
+      where wl.id = $1 limit 1`,
+        [user_id, chat_id]
+      )
+    )?.[0];
+
     const userInfo = (
       await connection.query(
         `select *, DATE_PART('hour', now() - last_message_datetime)::int hours_ago from white_list wl
@@ -98,7 +106,7 @@ chatStage.on("message", async (ctx) => {
     );
 
     let alert_id;
-    if (!userInfo) {
+    if (!wlInfo) {
       await ctx.deleteMessage(ctx.message.message_id).catch(console.log);
       alert_id = (await ctx.replyWithTitle("CONNECT_TO_ADMIN"))?.message_id;
     } else {
