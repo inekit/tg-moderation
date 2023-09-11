@@ -89,7 +89,8 @@ chatStage.on("message", async (ctx) => {
 
     console.log(
       ctx.message.message_id,
-      ctx.from.id,
+      user_id,
+      chat_id,
       "is user",
       userInfo,
       userInfo?.hours_ago !== null && userInfo?.hours_ago < 8,
