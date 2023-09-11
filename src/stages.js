@@ -82,7 +82,7 @@ chatStage.on("message", async (ctx) => {
       await connection.query(
         `select * from white_list wl
       where wl.id = $1 limit 1`,
-        [user_id, chat_id]
+        [user_id]
       )
     )?.[0];
 
