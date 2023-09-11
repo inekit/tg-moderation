@@ -76,6 +76,7 @@ chatStage.on("message", async (ctx) => {
   await queryRunner.connect();
   await queryRunner.startTransaction();
 
+  console.log(Date.now().toLocaleString(), ctx.message.message_id);
   try {
     const userInfo = (
       await connection.query(
@@ -85,6 +86,15 @@ chatStage.on("message", async (ctx) => {
         [user_id, chat_id]
       )
     )?.[0];
+
+    console.log(
+      Date.now().toLocaleString(),
+      ctx.message.message_id,
+      "is user",
+      userInfo,
+      userInfo?.hours_ago !== null && userInfo?.hours_ago < 8,
+      ctx.message.text
+    );
 
     let alert_id;
     if (!userInfo) {
