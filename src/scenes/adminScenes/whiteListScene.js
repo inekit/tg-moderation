@@ -154,6 +154,7 @@ newIdHandler.on("message", async (ctx) => {
     .then(async (res) => {
       const restrictedChats = res?.[0];
 
+      //console.log(restrictedChats);
       for (let chat of restrictedChats) {
         await ctx.telegram
           .restrictChatMember(chat.chat_id, newId, {
