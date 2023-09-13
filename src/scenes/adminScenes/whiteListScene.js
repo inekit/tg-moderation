@@ -147,6 +147,25 @@ newIdHandler.on("message", async (ctx) => {
       await ctx.replyWithTitle("DB_ERROR").catch(console.log);
     });
 
+  await connection
+    .query("delete from chat_restrictions where user_id = $1 returning *", [
+      newId,
+    ])
+    .then(async (res) => {
+      const restrictedChats = res?.[0];
+
+      for (let chat of restrictedChats) {
+        await ctx.telegram
+          .restrictChatMember(chat.chat_id, newId, {
+            can_send_messages: true,
+          })
+          .catch(console.log);
+      }
+    })
+    .catch(async (e) => {
+      console.log(e);
+    });
+
   //delete ctx.scene.state.newId;
 
   ctx.scene.reenter({ edit: true });

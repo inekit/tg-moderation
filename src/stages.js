@@ -79,7 +79,7 @@ chatStage.on("message", async (ctx) => {
   console.log(Date.now().toLocaleString(), ctx.message.message_id);
   try {
     const wlInfo = (
-      await connection.query(
+      await queryRunner.query(
         `select * from white_list wl
       where wl.id = $1 limit 1`,
         [user_id]
@@ -87,7 +87,7 @@ chatStage.on("message", async (ctx) => {
     )?.[0];
 
     const userInfo = (
-      await connection.query(
+      await queryRunner.query(
         `select *, DATE_PART('hour', now() - last_message_datetime)::int hours_ago from white_list wl
       left join chat_abilities ca on ca.user_id = wl.id
       where wl.id = $1 and (ca.chat_id = $2 or ca.chat_id is null) limit 1`,
@@ -108,17 +108,44 @@ chatStage.on("message", async (ctx) => {
     let alert_id;
     if (!wlInfo) {
       await ctx.deleteMessage(ctx.message.message_id).catch(console.log);
-      alert_id = (await ctx.replyWithTitle("CONNECT_TO_ADMIN"))?.message_id;
+      const restriction = await queryRunner.query(
+        `INSERT INTO chat_restrictions (user_id, chat_id, messages_count)
+      VALUES($1,$2,1) 
+      ON CONFLICT (user_id, chat_id) 
+      DO 
+         UPDATE SET messages_count = chat_restrictions.messages_count + 1 returning *`,
+        [user_id, chat_id]
+      );
+      console.log(restriction?.[0]?.messages_count);
+
+      if (restriction?.[0]?.messages_count >= 3)
+        ctx.telegram
+          .restrictChatMember(chat_id, user_id, {
+            can_send_messages: false,
+          })
+          .catch(console.log);
+      else
+        alert_id = (
+          await ctx.telegram.sendMessage(
+            chat_id,
+            ctx.getTitle("CONNECT_TO_ADMIN"),
+            {
+              disable_notification: true,
+            }
+          )
+        )?.message_id;
     } else {
       if (userInfo?.hours_ago !== null && userInfo?.hours_ago < 8) {
         await ctx.deleteMessage(ctx.message.message_id).catch(console.log);
         alert_id = (
-          await ctx.replyWithTitle("TOO_FAST_MESSAGING", [
-            8 - userInfo.hours_ago,
-          ])
+          await ctx.telegram.sendMessage(
+            chat_id,
+            ctx.getTitle("TOO_FAST_MESSAGING", [8 - userInfo.hours_ago]),
+            { disable_notification: true }
+          )
         )?.message_id;
       } else
-        await connection.query(
+        await queryRunner.query(
           `INSERT INTO chat_abilities (user_id, chat_id, last_message_datetime)
         VALUES($1,$2,now()) 
         ON CONFLICT (user_id, chat_id) 
@@ -127,7 +154,7 @@ chatStage.on("message", async (ctx) => {
           [user_id, chat_id]
         );
 
-      await connection.query(
+      await queryRunner.query(
         `update white_list set username = $1 where id=$2`,
         [ctx.from.username, user_id]
       );

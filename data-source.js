@@ -6,6 +6,7 @@ const WhiteList = require("./src/db/entity/WhiteList");
 const Admin = require("./src/db/entity/Admin");
 const Chat = require("./src/db/entity/Chat");
 const ChatAbilities = require("./src/db/entity/ChatAbilities");
+const ChatRestrictions = require("./src/db/entity/ChatRestrictions");
 
 const { DataSource } = require("typeorm");
 
@@ -18,7 +19,7 @@ const AppDataSource = new DataSource({
   username: DB_USER,
   password: DB_PASSWORD,
   database: DB_DATABASE,
-  entities: [WhiteList, Admin, Chat, ChatAbilities],
+  entities: [WhiteList, Admin, Chat, ChatAbilities, ChatRestrictions],
   synchronize: true,
   migrationsTableName: "custom_migration_table",
   migrations: ["./src/db/migrations/*.js"],
